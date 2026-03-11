@@ -64,25 +64,24 @@ export async function getPumpConfig(): Promise<PumpConfig[]> {
     const { fsSync, path } = await getNodeModules()
     const PUMP_CONFIG_PATH = getPumpConfigPath()
 
-    // Prüfe, ob die Datei existiert
     if (fsSync!.existsSync(PUMP_CONFIG_PATH)) {
-      // Lese die Datei
       const data = fsSync!.readFileSync(PUMP_CONFIG_PATH, "utf8")
-      return JSON.parse(data)
+      const loaded: PumpConfig[] = JSON.parse(data)
+      // Migration: fehlende Felder mit Defaults auffüllen
+      const migrated = loaded.map((p) => ({
+        speed: 100,
+        antiDripMl: 0.5,
+        ...p,
+      }))
+      return migrated
     } else {
-      // Wenn die Datei nicht existiert, lade die Standardkonfiguration
       const { pumpConfig } = await import("@/data/pump-config")
-
-      // Speichere die Standardkonfiguration in der JSON-Datei
       fsSync!.mkdirSync(path!.dirname(PUMP_CONFIG_PATH), { recursive: true })
       fsSync!.writeFileSync(PUMP_CONFIG_PATH, JSON.stringify(pumpConfig, null, 2), "utf8")
-
       return pumpConfig
     }
   } catch (error) {
     console.error("Fehler beim Laden der Pumpenkonfiguration:", error)
-
-    // Fallback: Lade die Standardkonfiguration
     const { pumpConfig } = await import("@/data/pump-config")
     return pumpConfig
   }
@@ -309,17 +308,20 @@ async function activatePump(
 
     const { stdout, stderr } = await execPromise(command)
 
-    if (stderr) {
+    if (stderr && !stderr.includes("Warning") && !stderr.includes("DeprecationWarning")) {
       console.error(`[PUMP] Python stderr (Pumpe ${pumpId}): ${stderr}`)
     }
     if (stdout) {
       try {
         const result = JSON.parse(stdout.trim())
         if (!result.success) {
-          throw new Error(result.error || "Unbekannter Fehler im Python-Skript")
+          throw new Error(`Python-Fehler Pumpe ${pumpId}: ${result.error || "Unbekannt"}`)
         }
-      } catch {
-        // stdout war kein JSON – ignorieren, wenn kein Fehler
+      } catch (parseErr) {
+        // stdout war kein JSON – nur loggen, kein throw
+        if (stdout.toLowerCase().includes("error") || stdout.toLowerCase().includes("traceback")) {
+          throw new Error(`Python-Skript Fehler (Pumpe ${pumpId}): ${stdout.trim()}`)
+        }
       }
     }
 
