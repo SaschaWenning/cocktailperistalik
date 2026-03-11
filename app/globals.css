@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Update the custom color palette for the Cocktail-App */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 220 13% 18%;
+  --card: 210 40% 98%;
+  --card-foreground: 220 13% 18%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 13% 18%;
+  --primary: 220 13% 18%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 262 83% 58%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 215 20.2% 65.1%;
+  --muted-foreground: 0 0% 100%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 220 13% 91%;
+  --input: 220 13% 97%;
+  --ring: 262 83% 58%;
+  --radius: 0.5rem;
+  --sidebar: 210 40% 98%;
+  --sidebar-foreground: 220 13% 18%;
+  --sidebar-primary: 0 0% 100%;
+  --sidebar-primary-foreground: 220 13% 18%;
+  --sidebar-accent: 262 83% 58%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 262 83% 58%;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Benutzerdefinierte Farbpalette für die Cocktail-App */
+:root {
+  --cocktail-bg: 0 0% 0%; /* Black background */
+  --cocktail-card-bg: 0 0% 10%; /* Darker gray for cards */
+  --cocktail-card-border: 0 0% 20%; /* Darker border */
+  --cocktail-text: 0 0% 100%; /* White text */
+  --cocktail-text-muted: 0 0% 70%; /* Light gray for muted text */
+  --cocktail-primary: 120 100% 60%; /* Lime green */
+  --cocktail-primary-hover: 120 100% 50%; /* Darker lime green for hover */
+  --cocktail-accent: 199 89% 48%; /* Keep accent color */
+  --cocktail-success: 142 76% 36%; /* Keep success color */
+  --cocktail-warning: 38 92% 50%; /* Keep warning color */
+  --cocktail-error: 0 84% 60%; /* Keep error color */
+  --cocktail-button-bg: 0 0% 15%; /* Gray background for buttons */
+  --cocktail-button-hover: 0 0% 25%; /* Darker gray for button hover */
+}
+
+/* Verbesserte Touch-Scrolling-Funktionalität */
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Schwarze Scrollbalken für alle Elemente */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* Firefox Scrollbar-Styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333333 #000000;
+}
+
+/* Anpassungen für Touch-Geräte */
+@media (pointer: coarse) {
+  /* Verbesserte Scrolling-Bereiche */
+  .overflow-auto,
+  .overflow-y-auto {
+    touch-action: pan-y;
+    cursor: grab;
+  }
+
+  /* Spezielle Touch-Behandlung für horizontale Tabs */
+  .overflow-x-auto {
+    touch-action: pan-x;
+    cursor: grab;
+  }
+
+  /* Größere Klickbereiche für Tabs */
+  .tabs-list button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}
+
+/* Größere Schrift für die gesamte App */
+html,
+body {
+  font-size: 36px; /* 50% größer als der vorherige Wert von 24px */
+  font-weight: bold; /* Alles in Fettschrift */
+}
+
+/* Anpassungen für bestimmte Elemente, damit die Proportionen stimmen */
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.text-base {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Größere Buttons für bessere Touch-Bedienung */
+button,
+.button {
+  min-height: 3.5rem;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+}
+
+/* Größere Eingabefelder */
+input,
+select,
+textarea {
+  font-size: 1rem;
+  height: auto;
+  padding: 0.75rem;
+  font-weight: bold;
+}
+
+/* Größere Tabs */
+.tabs-list button {
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Anpassungen für die Cocktail-Karten */
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Zurück zu 3 Spalten */
+}

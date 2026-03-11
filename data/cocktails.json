@@ -1,0 +1,528 @@
+[
+  {
+    "id": "big-john",
+    "name": "Big John",
+    "description": "Fruchtiger Cocktail mit Rum, Ananas und Maracuja",
+    "image": "/images/cocktails/big_john.jpg",
+    "alcoholic": true,
+    "ingredients": ["60ml Rum", "120ml Ananassaft", "120ml Maracujasaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 60 },
+      { "ingredientId": "pineapple-juice", "amount": 120 },
+      { "ingredientId": "passion-fruit-juice", "amount": 120 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "malibu-ananas",
+    "name": "Malibu Ananas",
+    "description": "Süßer Kokoslikör mit Ananassaft",
+    "image": "/images/cocktails/malibu_ananas.jpg",
+    "alcoholic": true,
+    "ingredients": ["80ml Malibu", "220ml Ananassaft"],
+    "recipe": [{ "ingredientId": "malibu", "amount": 80 }, { "ingredientId": "pineapple-juice", "amount": 220 }]
+  },
+  {
+    "id": "malibu-sunrise",
+    "name": "Malibu Sunrise",
+    "description": "Kokoslikör mit Orangensaft und Grenadine",
+    "image": "/images/cocktails/malibu_sunrise.jpg",
+    "alcoholic": true,
+    "ingredients": ["80ml Malibu", "200ml Orangensaft", "10ml Limettensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "malibu", "amount": 80 },
+      { "ingredientId": "orange-juice", "amount": 200 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "malibu-colada",
+    "name": "Malibu Colada",
+    "description": "Cremiger Cocktail mit Malibu und Ananas",
+    "image": "/images/cocktails/malibu_colada.jpg",
+    "alcoholic": true,
+    "ingredients": ["80ml Malibu", "150ml Ananassaft", "50ml Cream of Coconut (selbst hinzufügen)"],
+    "recipe": [{ "ingredientId": "malibu", "amount": 80 }, { "ingredientId": "pineapple-juice", "amount": 150 }]
+  },
+  {
+    "id": "peaches-cream",
+    "name": "Peaches Cream",
+    "description": "Fruchtiger Cocktail mit Pfirsichlikör und Vodka",
+    "image": "/images/cocktails/peaches_cream.jpg",
+    "alcoholic": true,
+    "ingredients": ["50ml Pfirsich Likör", "40ml Vodka", "200ml Orangensaft", "20ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "peach-liqueur", "amount": 50 },
+      { "ingredientId": "vodka", "amount": 40 },
+      { "ingredientId": "orange-juice", "amount": 200 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "planters-punch",
+    "name": "Planters Punch",
+    "description": "Klassischer Rum-Cocktail mit Fruchtsäften",
+    "image": "/images/cocktails/planters_punch.jpg",
+    "alcoholic": true,
+    "ingredients": ["60ml Rum", "100ml Orangensaft", "20ml Limettensaft", "10ml Grenadine", "100ml Ananassaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 60 },
+      { "ingredientId": "orange-juice", "amount": 100 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true },
+      { "ingredientId": "pineapple-juice", "amount": 100 }
+    ]
+  },
+  {
+    "id": "solero",
+    "name": "Solero",
+    "description": "Erfrischender Cocktail mit Maracuja und Vanille",
+    "image": "/images/cocktails/solero.jpg",
+    "alcoholic": true,
+    "ingredients": ["100ml Maracujasaft", "80ml Orangensaft", "20ml Limettensaft", "20ml Vanillesirup", "60ml Vodka"],
+    "recipe": [
+      { "ingredientId": "passion-fruit-juice", "amount": 100 },
+      { "ingredientId": "orange-juice", "amount": 80 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "vanilla-syrup", "amount": 20 },
+      { "ingredientId": "vodka", "amount": 60 }
+    ]
+  },
+  {
+    "id": "sex-on-the-beach",
+    "name": "Sex on the Beach",
+    "description": "Beliebter Cocktail mit Vodka und Pfirsichlikör",
+    "image": "/images/cocktails/sex_on_the_beach.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "50ml Vodka",
+      "30ml Pfirsich Likör",
+      "20ml Limettensaft",
+      "90ml Orangensaft",
+      "90ml Ananassaft",
+      "20ml Grenadine"
+    ],
+    "recipe": [
+      { "ingredientId": "vodka", "amount": 50 },
+      { "ingredientId": "peach-liqueur", "amount": 30 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "orange-juice", "amount": 90 },
+      { "ingredientId": "pineapple-juice", "amount": 90 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "mojito",
+    "name": "Mojito",
+    "description": "Klassischer Cocktail mit Rum, Limette und Minze",
+    "image": "/images/cocktails/mojito.jpg",
+    "alcoholic": true,
+    "ingredients": ["60ml Rum", "60ml Limettensaft", "100ml Sprudelwasser (manuell)", "Frische Minzblätter"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 60 },
+      { "ingredientId": "lime-juice", "amount": 60 },
+      { "ingredientId": "soda-water", "amount": 100, "manual": true, "instructions": "100ml Sprudelwasser hinzufügen" }
+    ]
+  },
+  {
+    "id": "passion-colada",
+    "name": "Passion Colada",
+    "description": "Exotischer Cocktail mit Rum, Malibu und Maracuja",
+    "image": "/images/cocktails/passion_colada.jpg",
+    "alcoholic": true,
+    "ingredients": ["40ml Rum", "40ml Malibu", "200ml Maracujasaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 40 },
+      { "ingredientId": "malibu", "amount": 40 },
+      { "ingredientId": "passion-fruit-juice", "amount": 200 }
+    ]
+  },
+  {
+    "id": "gin-tonic",
+    "name": "Gin & Tonic",
+    "description": "Klassischer Longdrink mit Gin und Tonic Water",
+    "image": "/images/cocktails/gin_tonic.jpg",
+    "alcoholic": true,
+    "ingredients": ["50ml Gin", "150ml Tonic Water", "Limettenscheibe"],
+    "recipe": [{ "ingredientId": "gin", "amount": 50 }, { "ingredientId": "tonic-water", "amount": 150 }]
+  },
+  {
+    "id": "cuba-libre",
+    "name": "Cuba Libre",
+    "description": "Rum-Cola mit einem Spritzer Limette",
+    "image": "/images/cocktails/cuba_libre.jpg",
+    "alcoholic": true,
+    "ingredients": ["50ml brauner Rum", "150ml Cola", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 50 },
+      { "ingredientId": "cola", "amount": 150 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "long-island-iced-tea",
+    "name": "Long Island Iced Tea",
+    "description": "Klassischer, starker Cocktail mit fünf verschiedenen Spirituosen und Cola",
+    "image": "/images/cocktails/long_island_iced_tea.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "15ml Brauner Rum",
+      "15ml Triple Sec",
+      "15ml Vodka",
+      "15ml Tequila",
+      "15ml Gin",
+      "30ml Limettensaft"
+    ],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 15 },
+      { "ingredientId": "triple-sec", "amount": 15 },
+      { "ingredientId": "vodka", "amount": 15 },
+      { "ingredientId": "tequila", "amount": 15 },
+      { "ingredientId": "gin", "amount": 15 },
+      { "ingredientId": "lime-juice", "amount": 30 },
+      { "ingredientId": "cola", "amount": 150, "manual": true, "instructions": "150ml Cola hinzufügen" }
+    ]
+  },
+  {
+    "id": "bahama-mama",
+    "name": "Bahama Mama",
+    "description": "Tropischer Cocktail mit Braunem Rum, Malibu und Fruchtsäften",
+    "image": "/images/cocktails/bahama_mama.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "50ml Brauner Rum",
+      "40ml Malibu",
+      "80ml Orangensaft",
+      "80ml Ananassaft",
+      "20ml Limettensaft",
+      "20ml Grenadine"
+    ],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 50 },
+      { "ingredientId": "malibu", "amount": 40 },
+      { "ingredientId": "orange-juice", "amount": 80 },
+      { "ingredientId": "pineapple-juice", "amount": 80 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "swimming-pool",
+    "name": "Swimming Pool",
+    "description": "Blauer, tropischer Cocktail mit Vodka und Ananassaft",
+    "image": "/images/cocktails/swimming_pool.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "60ml Vodka",
+      "30ml Blue Curacao",
+      "180ml Ananassaft",
+      "20ml Sahne (manuell)",
+      "20ml Cream of Coconut (manuell)"
+    ],
+    "recipe": [
+      { "ingredientId": "vodka", "amount": 60 },
+      { "ingredientId": "blue-curacao", "amount": 30 },
+      { "ingredientId": "pineapple-juice", "amount": 180 },
+      { "ingredientId": "cream", "amount": 20, "manual": true, "instructions": "20ml Sahne hinzufügen" },
+      {
+        "ingredientId": "cream-of-coconut",
+        "amount": 20,
+        "manual": true,
+        "instructions": "20ml Cream of Coconut hinzufügen"
+      }
+    ]
+  },
+  {
+    "id": "tequila-sunrise",
+    "name": "Tequila Sunrise",
+    "description": "Klassischer Cocktail mit Tequila, Orangensaft und Grenadine",
+    "image": "/images/cocktails/tequila_sunrise.jpg",
+    "alcoholic": true,
+    "ingredients": ["60ml Tequila", "220ml Orangensaft", "20ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "tequila", "amount": 60 },
+      { "ingredientId": "orange-juice", "amount": 220 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "touch-down",
+    "name": "Touch Down",
+    "description": "Fruchtiger Cocktail mit Braunem Rum, Triple Sec und Maracujasaft",
+    "image": "/images/cocktails/touch_down.jpg",
+    "alcoholic": true,
+    "ingredients": ["60ml Brauner Rum", "40ml Triple Sec", "140ml Maracujasaft", "10ml Limettensaft", "20ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 60 },
+      { "ingredientId": "triple-sec", "amount": 40 },
+      { "ingredientId": "passion-fruit-juice", "amount": 140 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "zombie",
+    "name": "Zombie",
+    "description": "Starker, fruchtiger Cocktail mit Braunem Rum und verschiedenen Fruchtsäften",
+    "image": "/images/cocktails/zombie.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "40ml Brauner Rum",
+      "30ml Triple Sec",
+      "80ml Ananassaft",
+      "50ml Orangensaft",
+      "20ml Limettensaft",
+      "50ml Maracujasaft",
+      "20ml Grenadine"
+    ],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 40 },
+      { "ingredientId": "triple-sec", "amount": 30 },
+      { "ingredientId": "pineapple-juice", "amount": 80 },
+      { "ingredientId": "orange-juice", "amount": 50 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "passion-fruit-juice", "amount": 50 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "mai-tai",
+    "name": "Mai Tai",
+    "description": "Klassischer Tiki-Cocktail mit braunem Rum und Mandelsirup",
+    "image": "/images/cocktails/mai_tai.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "60ml Brauner Rum",
+      "15ml Orangenlikör",
+      "50ml Ananassaft",
+      "15ml Mandelsirup",
+      "20ml Limettensaft"
+    ],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 60 },
+      { "ingredientId": "triple-sec", "amount": 15 },
+      { "ingredientId": "pineapple-juice", "amount": 50 },
+      { "ingredientId": "almond-syrup", "amount": 15 },
+      { "ingredientId": "lime-juice", "amount": 20 }
+    ]
+  },
+  {
+    "id": "tropical-sunrise",
+    "name": "Tropical Sunrise",
+    "description": "Erfrischender alkoholfreier Cocktail mit Ananas, Orange und Grenadine",
+    "image": "/images/cocktails/tropical-blend.png",
+    "alcoholic": false,
+    "ingredients": ["120ml Ananassaft", "120ml Orangensaft", "20ml Grenadine", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 120 },
+      { "ingredientId": "orange-juice", "amount": 120 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "passion-fizz",
+    "name": "Passion Fizz",
+    "description": "Sprudelnder alkoholfreier Cocktail mit Maracuja und Sodawasser",
+    "image": "/images/cocktails/vibrant-passion-fizz.png",
+    "alcoholic": false,
+    "ingredients": ["150ml Maracujasaft", "100ml Sprudelwasser (manuell)", "20ml Vanillesirup", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "passion-fruit-juice", "amount": 150 },
+      { "ingredientId": "soda-water", "amount": 100, "manual": true, "instructions": "100ml Sprudelwasser hinzufügen" },
+      { "ingredientId": "vanilla-syrup", "amount": 20 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "orange-vanilla-dream",
+    "name": "Orange Vanilla Dream",
+    "description": "Cremiger alkoholfreier Cocktail mit Orange und Vanille",
+    "image": "/images/cocktails/palm-glow.png",
+    "alcoholic": false,
+    "ingredients": ["200ml Orangensaft", "30ml Vanillesirup", "70ml Sprudelwasser (manuell)"],
+    "recipe": [
+      { "ingredientId": "orange-juice", "amount": 200 },
+      { "ingredientId": "vanilla-syrup", "amount": 30 },
+      { "ingredientId": "soda-water", "amount": 70, "manual": true, "instructions": "70ml Sprudelwasser hinzufügen" }
+    ]
+  },
+  {
+    "id": "citrus-splash",
+    "name": "Citrus Splash",
+    "description": "Fruchtiger alkoholfreier Cocktail mit Grenadine und Zitrusfrüchten",
+    "image": "/images/cocktails/citrus-splash.png",
+    "alcoholic": false,
+    "ingredients": [
+      "30ml Grenadine",
+      "100ml Orangensaft",
+      "100ml Ananassaft",
+      "20ml Limettensaft",
+      "50ml Sprudelwasser (manuell)"
+    ],
+    "recipe": [
+      { "ingredientId": "grenadine", "amount": 30, "delayed": true },
+      { "ingredientId": "orange-juice", "amount": 100 },
+      { "ingredientId": "pineapple-juice", "amount": 100 },
+      { "ingredientId": "lime-juice", "amount": 20 },
+      { "ingredientId": "soda-water", "amount": 50, "manual": true, "instructions": "50ml Sprudelwasser hinzufügen" }
+    ]
+  },
+  {
+    "id": "pineapple-passion",
+    "name": "Pineapple Passion",
+    "description": "Exotischer alkoholfreier Cocktail mit Ananas und Maracuja",
+    "image": "/images/cocktails/refreshing-citrus-cooler.png",
+    "alcoholic": false,
+    "ingredients": ["150ml Ananassaft", "100ml Maracujasaft", "15ml Limettensaft", "15ml Vanillesirup"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 150 },
+      { "ingredientId": "passion-fruit-juice", "amount": 100 },
+      { "ingredientId": "lime-juice", "amount": 15 },
+      { "ingredientId": "vanilla-syrup", "amount": 15 }
+    ]
+  },
+  {
+    "id": "citrus-cooler",
+    "name": "Citrus Cooler",
+    "description": "Erfrischender alkoholfreier Cocktail mit Limette und Sodawasser",
+    "image": "/images/cocktails/citrus-swirl-sunset.png",
+    "alcoholic": false,
+    "ingredients": ["40ml Limettensaft", "20ml Vanillesirup", "200ml Sprudelwasser (manuell)", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "lime-juice", "amount": 40 },
+      { "ingredientId": "vanilla-syrup", "amount": 20 },
+      { "ingredientId": "soda-water", "amount": 200, "manual": true, "instructions": "200ml Sprudelwasser hinzufügen" },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "tropical-sunset",
+    "name": "Tropical Sunset",
+    "description": "Schöner Farbverlauf mit Ananas, Orange und Grenadine",
+    "image": "/images/cocktails/tropical-sunset.png",
+    "alcoholic": false,
+    "ingredients": ["120ml Ananassaft", "80ml Orangensaft", "15ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 120 },
+      { "ingredientId": "orange-juice", "amount": 80 },
+      { "ingredientId": "grenadine", "amount": 15, "delayed": true }
+    ],
+    "manualIngredients": [
+      {
+        "name": "Eiswürfel",
+        "amount": "200g",
+        "instruction": "Glas zur Hälfte mit Eis füllen"
+      },
+      {
+        "name": "Orangenscheibe",
+        "amount": "1 Scheibe",
+        "instruction": "Als Garnitur am Glasrand"
+      }
+    ]
+  },
+  {
+    "id": "pineapple-lime-fizz",
+    "name": "Pineapple Lime Fizz",
+    "description": "Erfrischender Cocktail mit Ananas und Limette",
+    "image": "/images/cocktails/pineapple-lime-fizz.png",
+    "alcoholic": false,
+    "ingredients": ["150ml Ananassaft", "30ml Limettensaft", "10ml Vanillesirup"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 150 },
+      { "ingredientId": "lime-juice", "amount": 30 },
+      { "ingredientId": "vanilla-syrup", "amount": 10 }
+    ],
+    "manualIngredients": [
+      {
+        "name": "Sprudelwasser",
+        "amount": "50ml",
+        "instruction": "Zum Auffüllen und für den Fizz-Effekt"
+      },
+      {
+        "name": "Limettenscheibe",
+        "amount": "1 Scheibe",
+        "instruction": "Als Garnitur"
+      }
+    ]
+  },
+  {
+    "id": "passion-paradise",
+    "name": "Passion Paradise",
+    "description": "Exotischer Cocktail mit Maracuja und tropischen Früchten",
+    "image": "/images/cocktails/passion-paradise.png",
+    "alcoholic": false,
+    "ingredients": ["100ml Maracujasaft", "80ml Ananassaft", "40ml Orangensaft", "15ml Mandelsirup"],
+    "recipe": [
+      { "ingredientId": "passion-fruit-juice", "amount": 100 },
+      { "ingredientId": "pineapple-juice", "amount": 80 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "almond-syrup", "amount": 15 }
+    ],
+    "manualIngredients": [
+      {
+        "name": "Crushed Ice",
+        "amount": "150g",
+        "instruction": "Für tropisches Feeling"
+      },
+      {
+        "name": "Maracuja-Fruchtfleisch",
+        "amount": "1 TL",
+        "instruction": "Als Topping obendrauf"
+      }
+    ]
+  },
+  {
+    "id": "vanilla-orange-dream",
+    "name": "Vanilla Orange Dream",
+    "description": "Cremiger Traum mit Vanille und Orange",
+    "image": "/images/cocktails/vanilla-orange-dream.png",
+    "alcoholic": false,
+    "ingredients": ["120ml Orangensaft", "60ml Ananassaft", "25ml Vanillesirup", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "orange-juice", "amount": 120 },
+      { "ingredientId": "pineapple-juice", "amount": 60 },
+      { "ingredientId": "vanilla-syrup", "amount": 25 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ],
+    "manualIngredients": [
+      {
+        "name": "Sahne",
+        "amount": "20ml",
+        "instruction": "Vorsichtig obendrauf gießen für Schichteffekt"
+      },
+      {
+        "name": "Orangenzest",
+        "amount": "1 Prise",
+        "instruction": "Als aromatisches Topping"
+      }
+    ]
+  },
+  {
+    "id": "grenadine-sunrise",
+    "name": "Grenadine Sunrise",
+    "description": "Wunderschöner Sonnenaufgang im Glas",
+    "image": "/images/cocktails/grenadine-sunrise.png",
+    "alcoholic": false,
+    "ingredients": ["100ml Orangensaft", "80ml Ananassaft", "20ml Grenadine", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "orange-juice", "amount": 100 },
+      { "ingredientId": "pineapple-juice", "amount": 80 },
+      { "ingredientId": "grenadine", "amount": 20, "delayed": true },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ],
+    "manualIngredients": [
+      {
+        "name": "Eiswürfel",
+        "amount": "200g",
+        "instruction": "Glas komplett mit Eis füllen"
+      },
+      {
+        "name": "Grenadine extra",
+        "amount": "5ml",
+        "instruction": "Langsam am Glasrand hinunterlaufen lassen für Sunrise-Effekt"
+      }
+    ]
+  }
+]
