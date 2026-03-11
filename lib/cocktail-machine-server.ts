@@ -3,14 +3,19 @@
 import type { Cocktail } from "@/types/cocktail"
 import type { PumpConfig } from "@/types/pump"
 
-// Check if we're in a Node.js environment
+// Check if we're in a Node.js environment with filesystem access
 function isNodeEnvironment(): boolean {
-  return (
-    typeof process !== "undefined" &&
-    process.versions != null &&
-    process.versions.node != null &&
-    typeof window === "undefined"
-  )
+  try {
+    // Auf dem Raspberry Pi / Next.js Server ist process.versions.node immer gesetzt
+    // "use server" garantiert bereits Server-Kontext, daher reicht diese Prüfung
+    return (
+      typeof process !== "undefined" &&
+      process.versions != null &&
+      process.versions.node != null
+    )
+  } catch {
+    return false
+  }
 }
 
 let fs: typeof import("fs/promises") | null = null
@@ -31,7 +36,9 @@ async function getNodeModules() {
       path = require("path")
       const { exec } = require("child_process")
       const { promisify } = require("util")
-      execPromise = promisify(exec)
+      const rawExec = promisify(exec)
+      // Timeout auf 120 Sekunden erhöhen — Cocktails mit vielen Zutaten brauchen Zeit
+      execPromise = (cmd: string) => rawExec(cmd, { timeout: 120000 })
     } catch (error) {
       console.error("[v0] Failed to load Node.js modules:", error)
       throw new Error("Failed to load Node.js modules")
@@ -299,12 +306,15 @@ async function activatePump(
     const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control_i2c.py")
     const roundedDuration = Math.round(durationMs)
 
+    console.log(`[PUMP] Aktiviere Pumpe ${pumpId} | ${roundedDuration}ms | ${direction} | ${speedPercent}%`)
+    console.log(`[PUMP] Skript: ${PUMP_CONTROL_SCRIPT}`)
+
     if (!fsSync!.existsSync(PUMP_CONTROL_SCRIPT)) {
       throw new Error(`I2C Python-Skript nicht gefunden: ${PUMP_CONTROL_SCRIPT}`)
     }
 
-    // python3 pump_control_i2c.py activate <pump_id> <duration_ms> <direction> <speed_%>
     const command = `python3 ${PUMP_CONTROL_SCRIPT} activate ${pumpId} ${roundedDuration} ${direction} ${speedPercent}`
+    console.log(`[PUMP] Befehl: ${command}`)
 
     const { stdout, stderr } = await execPromise(command)
 
@@ -312,13 +322,13 @@ async function activatePump(
       console.error(`[PUMP] Python stderr (Pumpe ${pumpId}): ${stderr}`)
     }
     if (stdout) {
+      console.log(`[PUMP] Python stdout (Pumpe ${pumpId}): ${stdout.trim()}`)
       try {
         const result = JSON.parse(stdout.trim())
         if (!result.success) {
           throw new Error(`Python-Fehler Pumpe ${pumpId}: ${result.error || "Unbekannt"}`)
         }
       } catch (parseErr) {
-        // stdout war kein JSON – nur loggen, kein throw
         if (stdout.toLowerCase().includes("error") || stdout.toLowerCase().includes("traceback")) {
           throw new Error(`Python-Skript Fehler (Pumpe ${pumpId}): ${stdout.trim()}`)
         }
@@ -327,7 +337,8 @@ async function activatePump(
 
     return true
   } catch (error) {
-    console.error(`[PUMP] Fehler beim Aktivieren von Pumpe ${pumpId}:`, error)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error(`[PUMP] FEHLER Pumpe ${pumpId}: ${msg}`)
     throw error
   }
 }
