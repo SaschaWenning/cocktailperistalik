@@ -50,7 +50,7 @@ except ImportError as e:
 class PumpController:
     """Steuert 16 Pumpen über drei PCA9685-Boards und TB6612-Motortreiber."""
 
-    def __init__(self):
+    def __init__(self, stop_on_init: bool = True):
         if not HW_AVAILABLE:
             raise RuntimeError(
                 f"Fehlende Bibliothek: {IMPORT_ERROR}. "
@@ -70,8 +70,9 @@ class PumpController:
         self.pca_in2.frequency = PWM_FREQUENCY
         self.pca_pwm.frequency = PWM_FREQUENCY
 
-        # Beim Start alle Pumpen sicher stoppen
-        self.stop_all()
+        # Beim Start alle Pumpen sicher stoppen (nur wenn gewünscht)
+        if stop_on_init:
+            self.stop_all()
 
     # ------------------------------------------------------------------
     # Interne Hilfsmethoden
@@ -141,6 +142,70 @@ class PumpController:
 
         # PWM aktivieren
         self.pca_pwm.channels[ch].duty_cycle = duty
+
+    def activate_multi(self, pumps: list) -> dict:
+        """
+        Aktiviert mehrere Pumpen gleichzeitig und stoppt sie nach ihrer jeweiligen Laufzeit.
+
+        Args:
+            pumps: Liste von dicts mit:
+                   - pump_id (int, 1-16)
+                   - duration_ms (float)
+                   - direction ('forward' | 'reverse')
+                   - speed_percent (float, 0-100)
+                   - start_delay_ms (float, optionaler gestaffelter Start)
+
+        Returns:
+            dict mit 'success' und Ergebnis-Liste
+        """
+        if not pumps:
+            return {"success": True, "message": "Keine Pumpen angegeben", "pumps": []}
+
+        # Alle Pumpen vorbereiten: Richtung setzen (OHNE stop_all!)
+        # start_delay_ms staffelt den Anlaufzeitpunkt
+        for entry in pumps:
+            pump_id      = int(entry["pump_id"])
+            direction    = entry.get("direction", "forward")
+            speed_pct    = float(entry.get("speed_percent", 100.0))
+            start_delay  = float(entry.get("start_delay_ms", 0))
+
+            if start_delay > 0:
+                time.sleep(start_delay / 1000.0)
+
+            if direction == "reverse":
+                self.reverse(pump_id, speed_pct)
+            else:
+                self.forward(pump_id, speed_pct)
+
+        # Warten bis die längste Pumpe fertig ist, dann alle stoppen
+        # (Pumpen mit kürzerer Laufzeit werden durch stop nach ihrer Zeit gestoppt)
+        # Genauere Methode: jede Pumpe einzeln zur richtigen Zeit stoppen
+        start_time = time.monotonic()
+        # Sortiere nach Endzeit (start_delay + duration)
+        sorted_pumps = sorted(
+            pumps,
+            key=lambda p: float(p.get("start_delay_ms", 0)) + float(p["duration_ms"])
+        )
+        for entry in sorted_pumps:
+            pump_id     = int(entry["pump_id"])
+            duration_ms = float(entry["duration_ms"])
+            start_delay = float(entry.get("start_delay_ms", 0))
+            end_time    = (start_delay + duration_ms) / 1000.0
+            elapsed     = time.monotonic() - start_time
+            remaining   = end_time - elapsed
+            if remaining > 0:
+                time.sleep(remaining)
+            self.stop(pump_id)
+
+        results = [
+            {
+                "pump_id": int(p["pump_id"]),
+                "duration_ms": float(p["duration_ms"]),
+                "direction": p.get("direction", "forward"),
+            }
+            for p in pumps
+        ]
+        return {"success": True, "pumps": results}
 
     def activate_pump(
         self,
@@ -229,7 +294,21 @@ def main() -> None:
         # ----------------------------------------------------------
         # activate <pump_id> <duration_ms> [direction] [speed_%]
         # ----------------------------------------------------------
-        if action == "activate":
+        # ----------------------------------------------------------
+        # activate_multi <json>
+        # JSON: [{"pump_id":1,"duration_ms":1200,"direction":"forward","speed_percent":100,"start_delay_ms":0}, ...]
+        # ----------------------------------------------------------
+        if action == "activate_multi":
+            if len(sys.argv) < 3:
+                _err("Verwendung: python3 pump_control_i2c.py activate_multi '<json>'")
+            pump_list = json.loads(sys.argv[2])
+            result = controller.activate_multi(pump_list)
+            _ok(result)
+
+        # ----------------------------------------------------------
+        # activate <pump_id> <duration_ms> [direction] [speed_%]
+        # ----------------------------------------------------------
+        elif action == "activate":
             if len(sys.argv) < 4:
                 _err(
                     "Verwendung: python3 pump_control_i2c.py activate "
