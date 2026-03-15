@@ -5,7 +5,9 @@ import { NextResponse } from "next/server"
 import { promises as fs } from "fs"
 import path from "path"
 
-const COCKTAILS_DIR = path.join(process.cwd(), "data")
+// Auf dem Raspberry Pi liegt das Projekt in /home/pi/cocktailbot/cocktailbot-main/
+// process.cwd() könnte /home/pi/cocktailbot/ sein, daher expliziter Pfad
+const COCKTAILS_DIR = process.env.COCKTAILS_DATA_DIR || path.join(process.cwd(), "data")
 
 // GET: Listet alle gespeicherten JSON-Dateien auf und gibt aktuelle Datei zurück
 export async function GET() {
@@ -43,8 +45,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Kein Dateiname angegeben" }, { status: 400 })
     }
 
-    // Dateiname bereinigen und .json sicherstellen
-    const safeName = filename.replace(/[^a-zA-Z0-9_\-äöüÄÖÜß ]/g, "").trim()
+    // Dateiname bereinigen und .json sicherstellen (Punkt erlaubt für .json)
+    const safeName = filename.replace(/[^a-zA-Z0-9_\-äöüÄÖÜß .]/g, "").trim()
     if (!safeName) {
       return NextResponse.json({ error: "Ungültiger Dateiname" }, { status: 400 })
     }
@@ -60,6 +62,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "load") {
+      // Prüfe zuerst ob die Datei existiert
+      try {
+        await fs.access(targetPath)
+      } catch {
+        return NextResponse.json({ error: `Datei "${fullName}" existiert nicht` }, { status: 404 })
+      }
+      
       // Datei lesen und als cocktails.json speichern (aktive Liste wechseln)
       const raw = await fs.readFile(targetPath, "utf-8")
       const cocktails = JSON.parse(raw)
