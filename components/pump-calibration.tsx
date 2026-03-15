@@ -246,34 +246,34 @@ export default function PumpCalibration({ pumpConfig: initialConfig, onConfigUpd
             </Alert>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* Spaltenüberschriften */}
-            <div className="grid grid-cols-13 gap-2 items-center text-xs text-gray-400 pb-1 border-b border-[hsl(var(--cocktail-card-border))]">
-              <div className="col-span-1">#</div>
-              <div className="col-span-3">Zutat</div>
-              <div className="col-span-1">Zeit</div>
-              <div className="col-span-1">Speed</div>
-              <div className="col-span-1">Anti-Tropf</div>
-              <div className="col-span-2">Durchfluss</div>
-              <div className="col-span-2">Kalibrieren</div>
-              <div className="col-span-2">Status</div>
+            <div className="flex items-center gap-1 text-xs text-gray-400 pb-1 border-b border-[hsl(var(--cocktail-card-border))]">
+              <div className="w-6 shrink-0">#</div>
+              <div className="flex-1 min-w-0">Zutat</div>
+              <div className="w-12 shrink-0 text-center">Zeit</div>
+              <div className="w-14 shrink-0 text-center">Speed</div>
+              <div className="w-14 shrink-0 text-center">Tropf</div>
+              <div className="w-16 shrink-0 text-center">ml/s</div>
+              <div className="w-auto shrink-0"></div>
+              <div className="w-auto shrink-0"></div>
             </div>
             {pumpConfig.map((pump) => (
-              <div key={pump.id} className="grid grid-cols-13 gap-2 items-center">
-                <div className="col-span-1">
-                  <span className="font-medium text-white">{pump.id}</span>
+              <div key={pump.id} className="flex items-center gap-1">
+                <div className="w-6 shrink-0">
+                  <span className="font-medium text-white text-sm">{pump.id}</span>
                 </div>
 
-                <div className="col-span-3">
+                <div className="flex-1 min-w-0">
                   <Select
                     value={pump.ingredient}
                     onValueChange={(value) => handleIngredientChange(pump.id, value)}
                     disabled={calibrationStep !== "idle" || !pump.enabled}
                   >
                     <SelectTrigger
-                      className={`${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
+                      className={`h-8 text-xs ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
                     >
-                      <SelectValue placeholder="Zutat wählen" />
+                      <SelectValue placeholder="Zutat" />
                     </SelectTrigger>
                     <SelectContent className="bg-black text-white border-[hsl(var(--cocktail-card-border))]">
                       {allIngredients.map((ingredient) => (
@@ -286,14 +286,14 @@ export default function PumpCalibration({ pumpConfig: initialConfig, onConfigUpd
                 </div>
 
                 {/* Kalibrierungszeit */}
-                <div className="col-span-1">
+                <div className="w-12 shrink-0">
                   <Select
                     value={(pumpCalibrationTimes[pump.id] || 2).toString()}
                     onValueChange={(value) => handleCalibrationTimeChange(pump.id, Number(value))}
                     disabled={calibrationStep !== "idle" || !pump.enabled}
                   >
                     <SelectTrigger
-                      className={`w-full ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
+                      className={`h-8 text-xs px-1 ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -307,14 +307,14 @@ export default function PumpCalibration({ pumpConfig: initialConfig, onConfigUpd
                 </div>
 
                 {/* PWM-Geschwindigkeit */}
-                <div className="col-span-1">
+                <div className="w-14 shrink-0">
                   <Select
                     value={(pump.speed ?? 100).toString()}
                     onValueChange={(value) => handleSpeedChange(pump.id, Number(value))}
                     disabled={calibrationStep !== "idle" || !pump.enabled}
                   >
                     <SelectTrigger
-                      className={`w-full ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
+                      className={`h-8 text-xs px-1 ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -328,67 +328,60 @@ export default function PumpCalibration({ pumpConfig: initialConfig, onConfigUpd
                 </div>
 
                 {/* Anti-Tropf ml */}
-                <div className="col-span-1">
+                <div className="w-14 shrink-0">
                   <Select
                     value={(pump.antiDripMl ?? 0.5).toString()}
                     onValueChange={(value) => handleAntiDripChange(pump.id, Number(value))}
                     disabled={calibrationStep !== "idle" || !pump.enabled}
                   >
                     <SelectTrigger
-                      className={`w-full ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
+                      className={`h-8 text-xs px-1 ${pump.enabled ? "bg-[hsl(var(--cocktail-card-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
                     >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-black text-white border-[hsl(var(--cocktail-card-border))]">
                       <SelectItem value="0">Aus</SelectItem>
-                      <SelectItem value="0.3">0.3 ml</SelectItem>
-                      <SelectItem value="0.5">0.5 ml</SelectItem>
-                      <SelectItem value="0.8">0.8 ml</SelectItem>
-                      <SelectItem value="1.0">1.0 ml</SelectItem>
+                      <SelectItem value="0.3">0.3</SelectItem>
+                      <SelectItem value="0.5">0.5</SelectItem>
+                      <SelectItem value="0.8">0.8</SelectItem>
+                      <SelectItem value="1.0">1.0</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Durchflussrate (readonly, nach Kalibrierung) */}
-                <div className="col-span-2">
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="text"
-                      value={pump.flowRate.toFixed(1)}
-                      readOnly
-                      className={`w-full ${pump.enabled ? "bg-[hsl(var(--cocktail-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
-                    />
-                    <span className="text-xs whitespace-nowrap text-white">ml/s</span>
-                  </div>
+                {/* Durchflussrate (readonly) */}
+                <div className="w-16 shrink-0">
+                  <Input
+                    type="text"
+                    value={pump.flowRate.toFixed(1)}
+                    readOnly
+                    className={`h-8 text-xs text-center px-1 ${pump.enabled ? "bg-[hsl(var(--cocktail-bg))]" : "bg-gray-800 opacity-50"} text-white border-[hsl(var(--cocktail-card-border))]`}
+                  />
                 </div>
 
-                <div className="col-span-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] hover:text-[hsl(var(--cocktail-primary))]"
-                    onClick={() => startCalibration(pump.id)}
-                    disabled={calibrationStep !== "idle" || calibrating !== null || !pump.enabled}
-                  >
-                    {calibrating === pump.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kalibrieren"}
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2 text-xs bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] hover:text-[hsl(var(--cocktail-primary))]"
+                  onClick={() => startCalibration(pump.id)}
+                  disabled={calibrationStep !== "idle" || calibrating !== null || !pump.enabled}
+                >
+                  {calibrating === pump.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kal."}
+                </Button>
 
-                <div className="col-span-2">
-                  <Button
-                    variant={pump.enabled ? "destructive" : "default"}
-                    size="sm"
-                    className={`w-full ${
-                      pump.enabled
-                        ? "bg-red-600 hover:bg-red-700 text-white"
-                        : "bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
-                    }`}
-                    onClick={() => handleToggleEnabled(pump.id)}
-                    disabled={calibrationStep !== "idle"}
-                  >
-                    {pump.enabled ? "Deaktivieren" : "Aktivieren"}
-                  </Button>
-                </div>
+                <Button
+                  variant={pump.enabled ? "destructive" : "default"}
+                  size="sm"
+                  className={`h-8 px-2 text-xs ${
+                    pump.enabled
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
+                  }`}
+                  onClick={() => handleToggleEnabled(pump.id)}
+                  disabled={calibrationStep !== "idle"}
+                >
+                  {pump.enabled ? "Aus" : "An"}
+                </Button>
               </div>
             ))}
           </div>
