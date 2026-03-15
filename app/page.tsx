@@ -826,7 +826,7 @@ export default function Home() {
       ? [originalExt, ...imageExtensions.filter((ext) => ext !== originalExt)]
       : imageExtensions
 
-    const basePaths = ["/images/cocktails/", "/", ""]
+    const basePaths = ["/images/cocktails/", "/", "", "/public/images/cocktails/", "/public/"]
 
     const strategies: string[] = []
 
@@ -837,10 +837,13 @@ export default function Home() {
       strategies.push(`${basePath}${filename}`)
     }
 
+    // Dieselben Fallback-Strategien wie in cocktail-card.tsx (inkl. /api/image für den Pi)
     strategies.push(
       cocktail.image,
-      cocktail.image.startsWith("/") ? cocktail.image.slice(1) : `/${cocktail.image}`,
-      cocktail.image.split("?")[0],
+      cocktail.image.startsWith("/") ? cocktail.image.substring(1) : cocktail.image,
+      cocktail.image.startsWith("/") ? cocktail.image : `/${cocktail.image}`,
+      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/${filename}`)}`,
+      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/${filename}`)}`,
     )
 
     const uniqueStrategies = [...new Set(strategies)]

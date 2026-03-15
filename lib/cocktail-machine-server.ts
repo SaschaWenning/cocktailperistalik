@@ -417,13 +417,12 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
     }
   }
 
-  // Anti-Tropf: alle verwendeten Pumpen kurz rückwärts
+  // Anti-Tropf: NACH dem Return im Hintergrund starten (blockiert nicht die "Fertig"-Meldung)
   const usedPumps = levelUpdates
     .map((u) => pumpConfig.find((p) => p.id === u.pumpId))
     .filter((p): p is PumpConfig => p !== undefined)
-  await runAntiDrip(usedPumps)
 
-  // Aktualisiere die Füllstände über API
+  // Füllstände sofort aktualisieren bevor Anti-Tropf startet
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/ingredient-levels/update`,
@@ -433,10 +432,9 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
         body: JSON.stringify({ ingredients: levelUpdates }),
       },
     )
-
     if (response.ok) {
       const data = await response.json()
-      console.log("[v0] Füllstände erfolgreich aktualisiert:", data.levels?.length || 0, "Levels")
+      console.log("Füllstände aktualisiert:", data.levels?.length || 0, "Levels")
     } else {
       console.error("Fehler beim Aktualisieren der Füllstände:", response.statusText)
     }
@@ -444,8 +442,8 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
     console.error("Error updating levels:", error)
   }
 
-  // Return ingredient usage data so client can save statistics
-  return {
+  // Ergebnis sofort zurückgeben — Anti-Tropf läuft danach im Hintergrund
+  const result = {
     success: true,
     ingredientUsage: levelUpdates.map((update) => {
       const pump = pumpConfig.find((p) => p.id === update.pumpId)
@@ -455,6 +453,13 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
       }
     }),
   }
+
+  // Anti-Tropf fire-and-forget (kein await — Client bekommt sofort "Fertig")
+  runAntiDrip(usedPumps).catch((err) =>
+    console.error("Anti-Tropf Fehler (non-critical):", err)
+  )
+
+  return result
 }
 
 export async function makeSingleShotAction(ingredientId: string, amount = 40, pumpConfig: PumpConfig[]) {
@@ -535,14 +540,23 @@ export async function drainTubesAction(): Promise<{ success: boolean; message: s
 
   for (let g = 0; g < groups.length; g++) {
     const group = groups[g]
-    // Alle 4 Pumpen der Gruppe gleichzeitig rückwärts starten
-    await Promise.all(
-      group.map((pumpId) => {
-        const pump = pumpConfig.find((p) => p.id === pumpId)
-        if (!pump || !pump.enabled) return Promise.resolve()
-        return activatePump(pump.id, DRAIN_DURATION_MS, "reverse", DRAIN_SPEED)
-      }),
-    )
+
+    // Alle 4 Pumpen der Gruppe in EINEM Subprocess gleichzeitig rückwärts
+    const entries = group
+      .map((pumpId) => pumpConfig.find((p) => p.id === pumpId))
+      .filter((pump): pump is PumpConfig => pump !== undefined && pump.enabled)
+      .map((pump) => ({
+        pumpId:       pump.id,
+        durationMs:   DRAIN_DURATION_MS,
+        direction:    "reverse" as const,
+        speedPercent: DRAIN_SPEED,
+        startDelayMs: 0,
+      }))
+
+    if (entries.length > 0) {
+      await activatePumpsMulti(entries)
+    }
+
     // Pause zwischen Gruppen (außer nach der letzten)
     if (g < groups.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, PAUSE_BETWEEN_GROUPS_MS))
