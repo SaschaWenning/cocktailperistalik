@@ -1,10 +1,10 @@
 export interface PumpConfig {
   id: number
+  pin: number
   ingredient: string
-  flowRate: number  // ml pro Sekunde
-  enabled: boolean
-  speed: number     // Pumpengeschwindigkeit 0–100 % (Standard: 100)
-  antiDripMl: number // Anti-Tropf: ml rückwärts nach Förderung (Standard: 0.5 ml)
+  flowRate: number // ml pro Sekunde
+  enabled: boolean // Hinzugefügt für Aktivierung/Deaktivierung
+  priority?: number // Priorität bei gleicher Zutat (1 = wird zuerst verwendet, 2 = danach, etc.)
 }
 
 export interface Ingredient {

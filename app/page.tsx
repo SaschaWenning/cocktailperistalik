@@ -587,7 +587,9 @@ export default function Home() {
       }
 
       const category = activeTab === "virgin" ? "virgin" : activeTab === "shots" ? "shots" : "cocktails"
-      await makeCocktail(cocktail, currentPumpConfig, selectedSize, category)
+      // Übergebe die Füllstände für Multi-Pumpen-Verteilung
+      const levelsForApi = ingredientLevels.map(l => ({ pumpId: l.pumpId, currentLevel: l.currentLevel }))
+      await makeCocktail(cocktail, currentPumpConfig, selectedSize, category, levelsForApi)
 
       clearInterval(intervalId)
       setProgress(100)
@@ -826,7 +828,7 @@ export default function Home() {
       ? [originalExt, ...imageExtensions.filter((ext) => ext !== originalExt)]
       : imageExtensions
 
-    const basePaths = ["/images/cocktails/", "/", "", "/public/images/cocktails/", "/public/"]
+    const basePaths = ["/images/cocktails/", "/", ""]
 
     const strategies: string[] = []
 
@@ -837,13 +839,10 @@ export default function Home() {
       strategies.push(`${basePath}${filename}`)
     }
 
-    // Dieselben Fallback-Strategien wie in cocktail-card.tsx (inkl. /api/image für den Pi)
     strategies.push(
       cocktail.image,
-      cocktail.image.startsWith("/") ? cocktail.image.substring(1) : cocktail.image,
-      cocktail.image.startsWith("/") ? cocktail.image : `/${cocktail.image}`,
-      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/${filename}`)}`,
-      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/${filename}`)}`,
+      cocktail.image.startsWith("/") ? cocktail.image.slice(1) : `/${cocktail.image}`,
+      cocktail.image.split("?")[0],
     )
 
     const uniqueStrategies = [...new Set(strategies)]
