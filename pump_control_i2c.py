@@ -161,27 +161,28 @@ class PumpController:
         if not pumps:
             return {"success": True, "message": "Keine Pumpen angegeben", "pumps": []}
 
-        # Alle Pumpen vorbereiten: Richtung setzen (OHNE stop_all!)
-        # start_delay_ms staffelt den Anlaufzeitpunkt
+        # Startzeit BEVOR irgendwas passiert
+        start_time = time.monotonic()
+
+        # Alle Pumpen starten: mit start_delay gestaffelt
         for entry in pumps:
             pump_id      = int(entry["pump_id"])
             direction    = entry.get("direction", "forward")
             speed_pct    = float(entry.get("speed_percent", 100.0))
             start_delay  = float(entry.get("start_delay_ms", 0))
 
-            if start_delay > 0:
-                time.sleep(start_delay / 1000.0)
+            # Warte bis zum geplanten Startzeitpunkt
+            target_start = start_delay / 1000.0
+            elapsed = time.monotonic() - start_time
+            if target_start > elapsed:
+                time.sleep(target_start - elapsed)
 
             if direction == "reverse":
                 self.reverse(pump_id, speed_pct)
             else:
                 self.forward(pump_id, speed_pct)
 
-        # Warten bis die längste Pumpe fertig ist, dann alle stoppen
-        # (Pumpen mit kürzerer Laufzeit werden durch stop nach ihrer Zeit gestoppt)
-        # Genauere Methode: jede Pumpe einzeln zur richtigen Zeit stoppen
-        start_time = time.monotonic()
-        # Sortiere nach Endzeit (start_delay + duration)
+        # Jede Pumpe zur richtigen Zeit stoppen (sortiert nach Endzeit)
         sorted_pumps = sorted(
             pumps,
             key=lambda p: float(p.get("start_delay_ms", 0)) + float(p["duration_ms"])
