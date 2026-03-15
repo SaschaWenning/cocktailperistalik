@@ -302,7 +302,9 @@ def main() -> None:
             if len(sys.argv) < 3:
                 _err("Verwendung: python3 pump_control_i2c.py activate_multi '<json>'")
             pump_list = json.loads(sys.argv[2])
-            result = controller.activate_multi(pump_list)
+            # Neuen Controller OHNE stop_all beim Init verwenden
+            controller_multi = PumpController(stop_on_init=False)
+            result = controller_multi.activate_multi(pump_list)
             _ok(result)
 
         # ----------------------------------------------------------

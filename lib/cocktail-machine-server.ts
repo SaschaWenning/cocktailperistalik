@@ -6,8 +6,12 @@ import type { PumpConfig } from "@/types/pump"
 // Check if we're in a Node.js environment with filesystem access
 function isNodeEnvironment(): boolean {
   try {
-    // Auf dem Raspberry Pi / Next.js Server ist process.versions.node immer gesetzt
-    // "use server" garantiert bereits Server-Kontext, daher reicht diese Prüfung
+    // Prüfe ob require verfügbar ist (nicht in v0 Preview)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const testRequire = typeof require !== "undefined" && require
+    if (!testRequire) return false
+    // Teste ob fs geladen werden kann
+    testRequire("fs")
     return (
       typeof process !== "undefined" &&
       process.versions != null &&
@@ -541,16 +545,16 @@ export async function drainTubesAction(): Promise<{ success: boolean; message: s
   for (let g = 0; g < groups.length; g++) {
     const group = groups[g]
 
-    // Alle 4 Pumpen der Gruppe in EINEM Subprocess gleichzeitig rückwärts
+    // Alle 4 Pumpen der Gruppe in EINEM Subprocess gleichzeitig rückwärts (mit 200ms Staffelung)
     const entries = group
       .map((pumpId) => pumpConfig.find((p) => p.id === pumpId))
       .filter((pump): pump is PumpConfig => pump !== undefined && pump.enabled)
-      .map((pump) => ({
+      .map((pump, index) => ({
         pumpId:       pump.id,
         durationMs:   DRAIN_DURATION_MS,
         direction:    "reverse" as const,
         speedPercent: DRAIN_SPEED,
-        startDelayMs: 0,
+        startDelayMs: index * 200,
       }))
 
     if (entries.length > 0) {
