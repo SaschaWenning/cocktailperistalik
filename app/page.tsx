@@ -813,9 +813,11 @@ export default function Home() {
   }
 
   const findDetailImagePath = async (cocktail: Cocktail): Promise<string> => {
-    if (!cocktail.image) {
+    const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
+    
+    if (!cocktail.image || cocktail.image.trim() === "") {
       console.log(`[v0] No image specified for ${cocktail.name}, using placeholder`)
-      return `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
+      return placeholder
     }
 
     const filename = cocktail.image.split("/").pop() || cocktail.image
@@ -828,9 +830,14 @@ export default function Home() {
       ? [originalExt, ...imageExtensions.filter((ext) => ext !== originalExt)]
       : imageExtensions
 
-    const basePaths = ["/images/cocktails/", "/", ""]
+    const basePaths = ["/images/cocktails/", "/images/", "/", ""]
 
     const strategies: string[] = []
+
+    // Add the original image path first if it starts with / or http
+    if (cocktail.image.startsWith("/") || cocktail.image.startsWith("http")) {
+      strategies.push(cocktail.image)
+    }
 
     for (const basePath of basePaths) {
       for (const ext of extensionsToTry) {
@@ -845,7 +852,7 @@ export default function Home() {
       cocktail.image.split("?")[0],
     )
 
-    const uniqueStrategies = [...new Set(strategies)]
+    const uniqueStrategies = [...new Set(strategies.filter(s => s && s.trim() !== ""))]
 
     console.log(
       `[v0] Testing ${uniqueStrategies.length} detail image strategies for ${cocktail.name}:`,
@@ -868,7 +875,7 @@ export default function Home() {
         const success = await loadPromise
 
         if (success) {
-          console.log(`[v0] ✅ Found working detail image for ${cocktail.name}: ${testPath}`)
+          console.log(`[v0] Found working detail image for ${cocktail.name}: ${testPath}`)
           return testPath
         }
       } catch (error) {
@@ -876,8 +883,8 @@ export default function Home() {
       }
     }
 
-    console.log(`[v0] ❌ No working detail image found for ${cocktail.name}, using placeholder`)
-    return `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
+    console.log(`[v0] No working detail image found for ${cocktail.name}, using placeholder`)
+    return placeholder
   }
 
   function CocktailDetail({
