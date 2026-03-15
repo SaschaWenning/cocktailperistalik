@@ -814,31 +814,27 @@ export default function Home() {
 
   const findDetailImagePath = async (cocktail: Cocktail): Promise<string> => {
     const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
-    
+
     if (!cocktail.image || cocktail.image.trim() === "") {
-      console.log(`[v0] No image specified for ${cocktail.name}, using placeholder`)
       return placeholder
     }
 
     const filename = cocktail.image.split("/").pop() || cocktail.image
     const filenameWithoutExt = filename.replace(/\.[^/.]+$/, "")
     const originalExt = filename.split(".").pop()?.toLowerCase() || ""
-
     const imageExtensions = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"]
-
     const extensionsToTry = originalExt
       ? [originalExt, ...imageExtensions.filter((ext) => ext !== originalExt)]
       : imageExtensions
 
-    const basePaths = ["/images/cocktails/", "/images/", "/", ""]
-
     const strategies: string[] = []
 
-    // Add the original image path first if it starts with / or http
+    // Originalpfad zuerst - ohne crossOrigin-Test, direkt versuchen
     if (cocktail.image.startsWith("/") || cocktail.image.startsWith("http")) {
       strategies.push(cocktail.image)
     }
 
+    const basePaths = ["/images/cocktails/", "/images/", "/"]
     for (const basePath of basePaths) {
       for (const ext of extensionsToTry) {
         strategies.push(`${basePath}${filenameWithoutExt}.${ext}`)
@@ -846,44 +842,31 @@ export default function Home() {
       strategies.push(`${basePath}${filename}`)
     }
 
+    // Raspberry Pi Pfad über API
     strategies.push(
-      cocktail.image,
-      cocktail.image.startsWith("/") ? cocktail.image.slice(1) : `/${cocktail.image}`,
-      cocktail.image.split("?")[0],
+      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/${filename}`)}`,
     )
 
-    const uniqueStrategies = [...new Set(strategies.filter(s => s && s.trim() !== ""))]
+    const uniqueStrategies = [...new Set(strategies.filter((s) => s && s.trim() !== ""))]
 
-    console.log(
-      `[v0] Testing ${uniqueStrategies.length} detail image strategies for ${cocktail.name}:`,
-      uniqueStrategies.slice(0, 10),
-    )
-
-    for (let i = 0; i < uniqueStrategies.length; i++) {
-      const testPath = uniqueStrategies[i]
-
+    for (const testPath of uniqueStrategies) {
       try {
         const img = new Image()
-        img.crossOrigin = "anonymous"
-
+        // KEIN crossOrigin="anonymous" - das blockiert lokale Bilder
         const loadPromise = new Promise<boolean>((resolve) => {
           img.onload = () => resolve(true)
           img.onerror = () => resolve(false)
         })
-
         img.src = testPath
         const success = await loadPromise
-
         if (success) {
-          console.log(`[v0] Found working detail image for ${cocktail.name}: ${testPath}`)
           return testPath
         }
-      } catch (error) {
-        // Fehler ignorieren und nächste Strategie versuchen
+      } catch {
+        // Weiter zur nächsten Strategie
       }
     }
 
-    console.log(`[v0] No working detail image found for ${cocktail.name}, using placeholder`)
     return placeholder
   }
 
@@ -909,28 +892,23 @@ export default function Home() {
     allIngredients: any[]
   }) {
     const [detailImageSrc, setDetailImageSrc] = useState<string>("")
+    const [detailImageLoaded, setDetailImageLoaded] = useState<boolean>(false)
 
     useEffect(() => {
-      const loadDetailImage = async () => {
-        console.log(`[v0] CocktailDetail: Loading detail image for ${cocktail.name}`)
-        console.log(`[v0] CocktailDetail: Original cocktail.image = ${cocktail.image}`)
-        const imagePath = await findDetailImagePath(cocktail)
-        console.log(`[v0] CocktailDetail: Setting detail image path: ${imagePath}`)
-        setDetailImageSrc(imagePath)
-      }
-
-      loadDetailImage()
-    }, [cocktail])
+      setDetailImageLoaded(false)
+      setDetailImageSrc("")
+      findDetailImagePath(cocktail).then((path) => {
+        setDetailImageSrc(path)
+        setDetailImageLoaded(true)
+      })
+    }, [cocktail.id, cocktail.image])
 
     useEffect(() => {
       window.scrollTo({ top: 0, behavior: "smooth" })
     }, [cocktail.id])
 
     const handleDetailImageError = () => {
-      console.log(`[v0] CocktailDetail: Image error for ${cocktail.name}, current src: ${detailImageSrc}`)
-      console.log(`[v0] CocktailDetail: Falling back to placeholder`)
-      const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`
-      setDetailImageSrc(placeholder)
+      setDetailImageSrc(`/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`)
     }
 
     const availableSizes = cocktail.sizes || [200, 300, 400]
@@ -961,16 +939,18 @@ export default function Home() {
     return (
       <Card className="overflow-hidden transition-all bg-black border-[hsl(var(--cocktail-card-border))] ring-2 ring-[hsl(var(--cocktail-primary))] shadow-2xl">
         <div className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-1/3 h-48 md:h-64">
-            <img
-              src={detailImageSrc || "/placeholder.svg"}
-              alt={cocktail.name}
-              className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-              onError={handleDetailImageError}
-              onLoad={() => console.log(`[v0] CocktailDetail: Image loaded successfully: ${detailImageSrc}`)}
-              crossOrigin="anonymous"
-              key={`${cocktail.image}-${detailImageSrc}`}
-            />
+          <div className="relative w-full md:w-1/3 h-48 md:h-64 bg-gray-900">
+            {detailImageLoaded && detailImageSrc && (
+              <img
+                src={detailImageSrc}
+                alt={cocktail.name}
+                className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                onError={handleDetailImageError}
+              />
+            )}
+            {!detailImageLoaded && (
+              <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">Lädt...</div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-lg md:rounded-l-lg md:rounded-t-none" />
             <Badge
               variant={cocktail.alcoholic ? "default" : "default"}
@@ -1259,6 +1239,7 @@ export default function Home() {
             onDeleteCocktail={handleDeleteClick}
             onNewRecipe={handleNewRecipeSave}
             onTabConfigReload={reloadTabConfig}
+            onCocktailsReload={loadCocktails}
           />
         )
       default:
