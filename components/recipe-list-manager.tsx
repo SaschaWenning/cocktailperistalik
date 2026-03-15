@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Save, FolderOpen, Trash2, RefreshCw, ArrowUp, ArrowLeft, X, Lock, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export default function RecipeListManager() {
+export default function RecipeListManager({ onCocktailsReload }: { onCocktailsReload?: () => void }) {
   const { toast } = useToast()
   const [files, setFiles] = useState<string[]>([])
   const [currentFile, setCurrentFile] = useState("cocktails.json")
@@ -119,8 +119,12 @@ export default function RecipeListManager() {
       if (!res.ok) throw new Error(data.error || "Fehler")
       toast({ title: "Geladen", description: data.message })
       loadFileList()
-      // Seite neu laden damit die Cocktailliste aktualisiert wird
-      setTimeout(() => window.location.reload(), 1000)
+      // Cocktails in der Hauptseite direkt neu laden statt Seite neu laden
+      if (onCocktailsReload) {
+        onCocktailsReload()
+      } else {
+        setTimeout(() => window.location.reload(), 500)
+      }
     } catch (error: any) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" })
     } finally {

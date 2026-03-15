@@ -36,6 +36,7 @@ interface ServiceMenuProps {
   onDeleteCocktail?: (cocktailId: string) => void
   onNewRecipe?: (cocktail: any) => void
   onTabConfigReload?: () => void
+  onCocktailsReload?: () => void
 }
 
 export default function ServiceMenu({
@@ -51,6 +52,7 @@ export default function ServiceMenu({
   onDeleteCocktail,
   onNewRecipe,
   onTabConfigReload,
+  onCocktailsReload,
 }: ServiceMenuProps) {
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -143,7 +145,7 @@ export default function ServiceMenu({
       case "recipe-creator":
         return null
       case "recipe-lists":
-        return <RecipeListManager />
+        return <RecipeListManager onCocktailsReload={onCocktailsReload} />
       case "beleuchtung":
         return <LightingControl />
       case "statistics":
