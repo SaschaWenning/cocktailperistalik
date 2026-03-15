@@ -134,7 +134,10 @@ class PumpController:
     def reverse(self, pump_id: int, speed_percent: float = 100.0) -> None:
         """Startet eine Pumpe in Rückwärtsrichtung (Rückspülen/Entleeren)."""
         ch = self._validate_pump(pump_id)
-        duty = self._speed_to_duty(speed_percent)
+
+        # Rückwärts bewusst sanfter begrenzen (max 60%)
+        safe_speed = min(speed_percent, 60.0)
+        duty = self._speed_to_duty(safe_speed)
 
         # 1) sauber stoppen
         self.stop(pump_id)
