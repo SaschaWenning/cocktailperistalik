@@ -114,16 +114,21 @@ class PumpController:
         ch = self._validate_pump(pump_id)
         duty = self._speed_to_duty(speed_percent)
 
-        # Sicherheitsstopp vor Richtungswechsel
+        # 1) sauber stoppen
         self.stop(pump_id)
-        time.sleep(0.05)
+        time.sleep(0.5)
 
-        # TB6612: IN1=LOW, IN2=HIGH → Vorwärts
+        # 2) beide Richtungen sicher LOW lassen
+        self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
+        self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
+        time.sleep(0.5)
+
+        # 3) Vorwärtsrichtung setzen: IN1=LOW, IN2=HIGH
         self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
         self.pca_in2.channels[ch].duty_cycle = DUTY_FULL
-        time.sleep(0.05)
+        time.sleep(0.5)
 
-        # PWM aktivieren
+        # 4) PWM aktivieren
         self.pca_pwm.channels[ch].duty_cycle = duty
 
     def reverse(self, pump_id: int, speed_percent: float = 100.0) -> None:
@@ -131,16 +136,21 @@ class PumpController:
         ch = self._validate_pump(pump_id)
         duty = self._speed_to_duty(speed_percent)
 
-        # Sicherheitsstopp vor Richtungswechsel
+        # 1) sauber stoppen
         self.stop(pump_id)
-        time.sleep(0.05)
+        time.sleep(0.5)
 
-        # TB6612: IN1=HIGH, IN2=LOW → Rückwärts
+        # 2) beide Richtungen sicher LOW lassen
+        self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
+        self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
+        time.sleep(0.5)
+
+        # 3) Rückwärtsrichtung setzen: IN1=HIGH, IN2=LOW
         self.pca_in1.channels[ch].duty_cycle = DUTY_FULL
         self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
-        time.sleep(0.05)
+        time.sleep(0.5)
 
-        # PWM aktivieren
+        # 4) PWM aktivieren
         self.pca_pwm.channels[ch].duty_cycle = duty
 
     def activate_multi(self, pumps: list) -> dict:
