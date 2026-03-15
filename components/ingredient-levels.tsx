@@ -4,9 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Bug } from "lucide-react"
-import { ArrowLeft, X } from "lucide-react"
-import { pumpConfig } from "@/data/pump-config"
+import { ArrowLeft, X, Bug } from "lucide-react"
 import {
   getIngredientLevels,
   updateIngredientLevel,
@@ -18,9 +16,11 @@ import {
   type IngredientLevel,
 } from "@/lib/ingredient-level-service"
 import { getIngredientById } from "@/lib/ingredients"
+import type { PumpConfig } from "@/types/pump"
 
 export function IngredientLevels() {
   const [levels, setLevels] = useState<IngredientLevel[]>([])
+  const [activePumps, setActivePumps] = useState<PumpConfig[]>([])
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const [editingSize, setEditingSize] = useState<number | null>(null)
   const [editingName, setEditingName] = useState<number | null>(null)
@@ -30,7 +30,6 @@ export function IngredientLevels() {
   const [showDebug, setShowDebug] = useState(false)
   const [debugLogs, setDebugLogs] = useState<string[]>([])
   const [isFilling, setIsFilling] = useState(false)
-
   // Auto-Refresh während der Bearbeitung pausieren, danach fortsetzen
   const isEditing = editingLevel !== null || editingSize !== null || editingName !== null
 
@@ -51,6 +50,28 @@ export function IngredientLevels() {
     const timestamp = new Date().toLocaleTimeString()
     setDebugLogs((prev) => [`[${timestamp}] ${message}`, ...prev.slice(0, 19)])
   }
+
+  // Load active pumps from API (not static file) so enabled/disabled state is always current
+  const loadActivePumps = async () => {
+    try {
+      const res = await fetch("/api/pump-config")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && data.pumpConfig) {
+          setActivePumps(data.pumpConfig)
+          return
+        }
+      }
+    } catch {}
+  }
+
+  useEffect(() => {
+    loadActivePumps()
+    // Reload pump config when calibration changes pump enabled status
+    const handler = () => loadActivePumps()
+    window.addEventListener("pump-config-changed", handler)
+    return () => window.removeEventListener("pump-config-changed", handler)
+  }, [])
 
   useEffect(() => {
     if (unsubscribeRef.current) {
@@ -248,7 +269,9 @@ export function IngredientLevels() {
   }
 
   const enabledLevels = levels.filter((level) => {
-    const pump = pumpConfig.find((p) => p.id === level.pumpId)
+    const pump = activePumps.find((p) => p.id === level.pumpId)
+    // If pump config not loaded yet, show all; once loaded, only show enabled pumps
+    if (activePumps.length === 0) return true
     return pump?.enabled !== false
   })
 

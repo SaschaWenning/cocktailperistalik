@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, ArrowUp, Lock, ArrowLeft, X, Check } from "lucide-react"
 import type { Ingredient } from "@/types/pump"
 
@@ -151,176 +151,217 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-4xl max-h-[95vh] bg-black border-[hsl(var(--cocktail-card-border))] flex flex-col">
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-4xl max-h-[95vh] bg-black border-gray-700 flex flex-col">
           {!showKeyboard ? (
             <>
-              <CardHeader className="flex-shrink-0">
-                <CardTitle className="text-white">Zutaten verwalten</CardTitle>
+              <CardHeader className="flex-shrink-0 border-b border-gray-700 pb-4">
+                <div className="text-center">
+                  <CardTitle className="text-xl font-bold text-[#00ff00]">Zutaten verwalten</CardTitle>
+                  <p className="text-gray-400 text-sm mt-1">Erstelle und verwalte deine eigenen Zutaten</p>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6 overflow-auto flex-1">
+              <CardContent className="space-y-5 overflow-auto flex-1 pt-5">
                 {/* Neue Zutat hinzufügen */}
-                <div className="space-y-4 p-4 border border-[hsl(var(--cocktail-card-border))] rounded-lg bg-[hsl(var(--cocktail-card-bg))]">
-                  <h3 className="font-semibold text-white">Neue Zutat hinzufügen</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="ingredient-name" className="text-white">
-                        Name der Zutat
+                <div className="bg-gray-900/50 rounded-lg p-4 space-y-4">
+                  <h3 className="text-sm font-semibold text-[#00ff00] uppercase tracking-wide">Neue Zutat hinzufügen</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ingredient-name" className="text-gray-300 text-sm">
+                        Name der Zutat *
                       </Label>
                       <Input
                         id="ingredient-name"
                         value={newIngredient.name}
                         readOnly
                         placeholder="z.B. Erdbeersaft"
-                        className="bg-white text-black border-[hsl(var(--cocktail-card-border))] placeholder:text-gray-400 cursor-pointer"
+                        className="bg-gray-800 border-gray-600 text-white h-10 cursor-pointer hover:border-[#00ff00] transition-colors placeholder:text-gray-500"
                         onClick={openKeyboard}
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="ingredient-alcoholic"
-                        checked={newIngredient.alcoholic}
-                        onCheckedChange={(checked) => setNewIngredient((prev) => ({ ...prev, alcoholic: checked }))}
-                        className="scale-50 data-[state=checked]:bg-[#00ff00]"
-                      />
-                      <Label htmlFor="ingredient-alcoholic" className="text-white text-sm">
-                        Alkoholisch
-                      </Label>
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-gray-300 text-sm">Art</Label>
+                      <Select 
+                        value={newIngredient.alcoholic ? "true" : "false"} 
+                        onValueChange={(value) => setNewIngredient((prev) => ({ ...prev, alcoholic: value === "true" }))}
+                      >
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white h-10 hover:border-[#00ff00] transition-colors">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border border-gray-600">
+                          <SelectItem value="true" className="text-white hover:bg-gray-700 cursor-pointer">
+                            Mit Alkohol
+                          </SelectItem>
+                          <SelectItem value="false" className="text-white hover:bg-gray-700 cursor-pointer">
+                            Ohne Alkohol
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Button onClick={addIngredient} className="h-8 px-4 bg-[#00ff00] text-black hover:bg-[#00cc00]">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Zutat hinzufügen
-                    </Button>
                   </div>
+                  
+                  <Button 
+                    onClick={addIngredient} 
+                    disabled={!newIngredient.name.trim()}
+                    className="h-10 px-6 bg-[#00ff00] text-black hover:bg-[#00cc00] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Zutat hinzufügen
+                  </Button>
                 </div>
 
                 {/* Benutzerdefinierte Zutaten anzeigen */}
-                {customIngredients.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-white">Ihre benutzerdefinierten Zutaten</h3>
+                <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[#00ff00] uppercase tracking-wide">
+                      Deine Zutaten
+                    </h3>
+                    {customIngredients.length > 0 && (
+                      <span className="text-gray-500 text-sm">{customIngredients.length} Zutat{customIngredients.length !== 1 ? 'en' : ''}</span>
+                    )}
+                  </div>
+                  
+                  {customIngredients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Noch keine eigenen Zutaten erstellt.</p>
+                      <p className="text-sm mt-1">Erstelle oben deine erste Zutat.</p>
+                    </div>
+                  ) : (
                     <div className="space-y-2">
                       {customIngredients.map((ingredient) => (
                         <div
                           key={ingredient.id}
-                          className="flex items-center justify-between p-3 border border-[hsl(var(--cocktail-card-border))] rounded-lg bg-[hsl(var(--cocktail-card-bg))]"
+                          className="flex items-center justify-between bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-gray-600 transition-colors"
                         >
-                          <div>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${ingredient.alcoholic ? 'bg-red-500' : 'bg-green-500'}`} />
                             <span className="font-medium text-white">{ingredient.name}</span>
-                            <span className="ml-2 text-sm text-[hsl(var(--cocktail-text))]">
-                              {ingredient.alcoholic ? "(Alkoholisch)" : "(Alkoholfrei)"}
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              ingredient.alcoholic 
+                                ? 'bg-red-900/50 text-red-400' 
+                                : 'bg-green-900/50 text-green-400'
+                            }`}>
+                              {ingredient.alcoholic ? "Alkoholisch" : "Alkoholfrei"}
                             </span>
                           </div>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => deleteIngredient(ingredient.id)}
-                            className="bg-[hsl(var(--cocktail-card-bg))] text-white border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))]"
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/30"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
-              <div className="flex-shrink-0 p-6 pt-0">
-                <Button onClick={handleClose} className="h-8 px-4 bg-[#00ff00] text-black hover:bg-[#00cc00]">
-                  Schließen
-                </Button>
+              <div className="flex-shrink-0 p-4 pt-0 border-t border-gray-700 mt-4">
+                <div className="flex justify-between items-center pt-4">
+                  <p className="text-gray-500 text-xs">* Pflichtfeld</p>
+                  <Button onClick={handleClose} className="h-10 px-6 bg-gray-700 text-white hover:bg-gray-600">
+                    Schliessen
+                  </Button>
+                </div>
               </div>
             </>
           ) : (
-            <div className="flex gap-3 my-2 h-[85vh] p-2">
-              {/* Tastatur links */}
-              <div className="flex-1 flex flex-col">
-                <div className="text-center mb-2">
-                  <h3 className="text-base font-semibold text-white mb-1">Zutatennamen eingeben</h3>
-                  <div className="bg-white text-black text-base p-2 rounded mb-2 min-h-[40px] break-all">
-                    {keyboardValue || <span className="text-gray-400">Eingabe...</span>}
+            <div className="overflow-y-auto p-2" style={{ maxHeight: "85vh" }}>
+              <div className="flex gap-3 my-2">
+                {/* Tastatur links */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  <div className="text-center mb-2">
+                    <h3 className="text-base font-semibold text-white mb-1">Zutatennamen eingeben</h3>
+                    <div className="bg-white text-black text-lg p-3 rounded mb-3 min-h-[44px] break-all border-2 border-[#00ff00]">
+                      {keyboardValue || <span className="text-gray-400">Eingabe...</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    {alphaKeys.map((row, rowIndex) => (
+                      <div key={rowIndex} className="flex gap-1 justify-center">
+                        {row.map((key) => {
+                          let displayKey = key
+                          if (key.length === 1 && key.match(/[a-z]/)) {
+                            const shouldShowUppercase =
+                              (isShiftActive && !isCapsLockActive) || (!isShiftActive && isCapsLockActive)
+                            displayKey = shouldShowUppercase ? key.toUpperCase() : key.toLowerCase()
+                          }
+
+                          return (
+                            <Button
+                              key={key}
+                              type="button"
+                              onClick={() => handleKeyPress(key)}
+                              className="flex-1 h-10 text-sm bg-gray-700 hover:bg-gray-600 text-white min-h-0"
+                            >
+                              {displayKey}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-2">
-                  {alphaKeys.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex gap-1 justify-center flex-1">
-                      {row.map((key) => {
-                        let displayKey = key
-                        if (key.length === 1 && key.match(/[a-z]/)) {
-                          const shouldShowUppercase =
-                            (isShiftActive && !isCapsLockActive) || (!isShiftActive && isCapsLockActive)
-                          displayKey = shouldShowUppercase ? key.toUpperCase() : key.toLowerCase()
-                        }
-
-                        return (
-                          <Button
-                            key={key}
-                            type="button"
-                            onClick={() => handleKeyPress(key)}
-                            className="flex-1 text-lg bg-gray-700 hover:bg-gray-600 text-white min-h-0 h-full"
-                          >
-                            {displayKey}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                  ))}
+                {/* Action Buttons rechts */}
+                <div className="flex flex-col gap-2 w-24">
+                  <Button
+                    type="button"
+                    onClick={handleShift}
+                    className={`h-11 text-white flex flex-col items-center justify-center ${
+                      isShiftActive ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-700 hover:bg-gray-600"
+                    }`}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                    <span className="text-xs">Shift</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCapsLock}
+                    className={`h-11 text-white flex flex-col items-center justify-center ${
+                      isCapsLockActive ? "bg-orange-600 hover:bg-orange-700" : "bg-gray-700 hover:bg-gray-600"
+                    }`}
+                  >
+                    <Lock className="h-3 w-3" />
+                    <span className="text-xs">Caps</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleBackspace}
+                    className="h-11 bg-red-700 hover:bg-red-600 text-white flex flex-col items-center justify-center"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    <span className="text-xs">Back</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleClear}
+                    className="h-11 bg-yellow-700 hover:bg-yellow-600 text-white flex flex-col items-center justify-center"
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="text-xs">Clear</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleKeyboardCancel}
+                    className="h-11 bg-gray-700 hover:bg-gray-600 text-white flex flex-col items-center justify-center"
+                  >
+                    <span className="text-xs">Cancel</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleKeyboardConfirm}
+                    className="h-11 bg-green-700 hover:bg-green-600 text-white flex flex-col items-center justify-center"
+                  >
+                    <Check className="h-3 w-3" />
+                    <span className="text-xs">OK</span>
+                  </Button>
                 </div>
-              </div>
-
-              {/* Action Buttons rechts */}
-              <div className="flex flex-col gap-2 w-24">
-                <Button
-                  type="button"
-                  onClick={handleShift}
-                  className={`h-16 text-white flex flex-col items-center justify-center ${
-                    isShiftActive ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-700 hover:bg-gray-600"
-                  }`}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                  <span className="text-xs">Shift</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCapsLock}
-                  className={`h-16 text-white flex flex-col items-center justify-center ${
-                    isCapsLockActive ? "bg-orange-600 hover:bg-orange-700" : "bg-gray-700 hover:bg-gray-600"
-                  }`}
-                >
-                  <Lock className="h-4 w-4" />
-                  <span className="text-xs">Caps</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleBackspace}
-                  className="h-16 bg-red-700 hover:bg-red-600 text-white flex flex-col items-center justify-center"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="text-xs">Back</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleClear}
-                  className="h-16 bg-yellow-700 hover:bg-yellow-600 text-white flex flex-col items-center justify-center"
-                >
-                  <X className="h-4 w-4" />
-                  <span className="text-xs">Clear</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleKeyboardCancel}
-                  className="h-16 bg-gray-700 hover:bg-gray-600 text-white flex flex-col items-center justify-center"
-                >
-                  <span className="text-xs">Cancel</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleKeyboardConfirm}
-                  className="h-16 bg-green-700 hover:bg-green-600 text-white flex flex-col items-center justify-center"
-                >
-                  <Check className="h-4 w-4" />
-                  <span className="text-xs">OK</span>
-                </Button>
               </div>
             </div>
           )}

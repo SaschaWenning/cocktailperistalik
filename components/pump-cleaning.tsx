@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Droplets, Check, AlertTriangle, Settings, ArrowDown } from "lucide-react"
+import { Loader2, Droplets, Check, AlertTriangle, Settings } from "lucide-react"
 import type { PumpConfig } from "@/types/pump"
-import { cleanPump, drainTubes } from "@/lib/cocktail-machine"
+import { cleanPump } from "@/lib/cocktail-machine"
 
 interface PumpCleaningProps {
   pumpConfig: PumpConfig[]
@@ -19,8 +19,6 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
   const [progress, setProgress] = useState(0)
   const [pumpsDone, setPumpsDone] = useState<number[]>([])
   const [manualCleaningPumps, setManualCleaningPumps] = useState<Set<number>>(new Set())
-  const [drainStatus, setDrainStatus] = useState<"idle" | "running" | "complete" | "error">("idle")
-  const [drainCurrentGroup, setDrainCurrentGroup] = useState<number>(0)
   const cleaningProcessRef = useRef<{ cancel: boolean }>({ cancel: false })
 
   const enabledPumps = pumpConfig.filter((pump) => pump.enabled)
@@ -100,42 +98,6 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
         return newSet
       })
     }
-  }
-
-  const DRAIN_GROUPS = [
-    [1, 2, 3, 4],
-    [5, 6, 7, 8],
-    [9, 10, 11, 12],
-    [13, 14, 15, 16],
-  ]
-
-  const startDraining = async () => {
-    setDrainStatus("running")
-    setDrainCurrentGroup(0)
-    try {
-      // UI-seitige Gruppenanzeige: jede Gruppe dauert 10 s + 2 s Pause
-      for (let g = 0; g < DRAIN_GROUPS.length; g++) {
-        setDrainCurrentGroup(g + 1)
-        // Warte auf Abschluss dieser Gruppe (10 s) + Pause (2 s, außer letzte)
-        await new Promise((resolve) => setTimeout(resolve, g < DRAIN_GROUPS.length - 1 ? 12000 : 10000))
-      }
-      // Server-Aktion parallel gestartet – wir warten sie hier nicht ab da
-      // die UI-Zeitführung bereits synchron läuft. Stattdessen feuern wir sie
-      // direkt beim Klick ab.
-      setDrainCurrentGroup(0)
-      setDrainStatus("complete")
-    } catch {
-      setDrainStatus("error")
-    }
-  }
-
-  const handleDrainClick = () => {
-    // Server-Aktion starten (non-blocking für UI)
-    drainTubes().catch((err) => {
-      console.error("Fehler beim Entleeren:", err)
-      setDrainStatus("error")
-    })
-    startDraining()
   }
 
   return (
@@ -259,105 +221,6 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
               <Button
                 onClick={resetCleaning}
                 className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))]"
-              >
-                Zurücksetzen
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Schläuche entleeren */}
-      <Card className="bg-black border-[hsl(var(--cocktail-card-border))]">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-white">
-            <ArrowDown className="h-5 w-5 text-[hsl(var(--cocktail-primary))]" />
-            Schläuche entleeren
-          </CardTitle>
-          <CardDescription className="text-[hsl(var(--cocktail-text-muted))]">
-            Alle 16 Pumpen rückwärts laufen lassen (4 Gruppen a 4 Pumpen, je 10 Sekunden)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Alert className="bg-[hsl(var(--cocktail-card-bg))] border-[hsl(var(--cocktail-card-border))]">
-            <AlertDescription className="text-[hsl(var(--cocktail-text))] text-sm">
-              Stellt einen leeren Auffangbehälter unter alle Ausgabe-Schläuche. Die Pumpen werden
-              in 4 Gruppen nacheinander fur je 10 Sekunden rückwärts betrieben.
-            </AlertDescription>
-          </Alert>
-
-          {/* Gruppen-Anzeige */}
-          <div className="grid grid-cols-4 gap-2">
-            {DRAIN_GROUPS.map((group, idx) => (
-              <div
-                key={idx}
-                className={`rounded-md border p-2 text-center transition-all ${
-                  drainStatus === "running" && drainCurrentGroup === idx + 1
-                    ? "border-[hsl(var(--cocktail-primary))]/60 bg-[hsl(var(--cocktail-primary))]/10 animate-pulse"
-                    : drainStatus === "complete" || (drainStatus === "running" && drainCurrentGroup > idx + 1)
-                      ? "border-[hsl(var(--cocktail-success))]/40 bg-[hsl(var(--cocktail-success))]/10"
-                      : "border-[hsl(var(--cocktail-card-border))] bg-[hsl(var(--cocktail-bg))]"
-                }`}
-              >
-                <p className="text-xs text-[hsl(var(--cocktail-text-muted))] mb-1">Gruppe {idx + 1}</p>
-                <p className="text-sm font-medium text-white">{group.join(", ")}</p>
-                {drainStatus === "running" && drainCurrentGroup === idx + 1 && (
-                  <Loader2 className="h-3 w-3 animate-spin text-[hsl(var(--cocktail-primary))] mx-auto mt-1" />
-                )}
-                {(drainStatus === "complete" || (drainStatus === "running" && drainCurrentGroup > idx + 1)) && (
-                  <Check className="h-3 w-3 text-[hsl(var(--cocktail-success))] mx-auto mt-1" />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {drainStatus === "idle" && (
-            <Button
-              onClick={handleDrainClick}
-              disabled={cleaningStatus === "cleaning"}
-              className="w-full bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
-              size="lg"
-            >
-              <ArrowDown className="mr-2 h-5 w-5" />
-              Schläuche entleeren
-            </Button>
-          )}
-
-          {drainStatus === "running" && (
-            <Button disabled className="w-full" size="lg">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Gruppe {drainCurrentGroup} von {DRAIN_GROUPS.length} läuft... (10 s)
-            </Button>
-          )}
-
-          {drainStatus === "complete" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center py-2">
-                <div className="rounded-full bg-[hsl(var(--cocktail-success))]/20 p-2">
-                  <Check className="h-6 w-6 text-[hsl(var(--cocktail-success))]" />
-                </div>
-              </div>
-              <p className="text-center text-sm font-medium text-white">Alle Schläuche erfolgreich entleert.</p>
-              <Button
-                onClick={() => { setDrainStatus("idle"); setDrainCurrentGroup(0) }}
-                className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border border-[hsl(var(--cocktail-card-border))]"
-              >
-                Zurücksetzen
-              </Button>
-            </div>
-          )}
-
-          {drainStatus === "error" && (
-            <div className="space-y-3">
-              <Alert className="bg-red-900/20 border-red-500/40">
-                <AlertTriangle className="h-4 w-4 text-red-400" />
-                <AlertDescription className="text-red-300">
-                  Fehler beim Entleeren. Bitte die Verbindung zur Hardware prüfen.
-                </AlertDescription>
-              </Alert>
-              <Button
-                onClick={() => { setDrainStatus("idle"); setDrainCurrentGroup(0) }}
-                className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border border-[hsl(var(--cocktail-card-border))]"
               >
                 Zurücksetzen
               </Button>
