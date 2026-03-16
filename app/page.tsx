@@ -30,7 +30,7 @@ import IngredientManager from "@/components/ingredient-manager"
 import PumpCalibration from "@/components/pump-calibration"
 import { Progress } from "@/components/ui/progress"
 import { Check, GlassWater } from "lucide-react"
-import TermsOfService from "@/components/terms-of-service"
+
 import LightingControl from "@/components/lighting-control"
 
 // Anzahl der Cocktails pro Seite
@@ -75,7 +75,7 @@ export default function Home() {
 
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const [showTerms, setShowTerms] = useState(false)
+
 
   const handleCocktailPageChange = (page: number) => {
     setCurrentPage(page)
@@ -128,11 +128,6 @@ export default function Home() {
       } finally {
         setLoading(false)
       }
-    }
-
-    const termsAccepted = localStorage.getItem("cocktailbot-terms-accepted")
-    if (!termsAccepted) {
-      setShowTerms(true)
     }
 
     loadData()
@@ -1276,14 +1271,8 @@ export default function Home() {
     syncLevels()
   }, [pumpConfig])
 
-  const handleTermsAccept = () => {
-    setShowTerms(false)
-  }
-
   return (
     <div className="min-h-screen bg-black text-white">
-      {showTerms && <TermsOfService onAccept={handleTermsAccept} />}
-
       <div className="container mx-auto p-6 max-w-7xl">
         <header className="mb-8">
           <h1
