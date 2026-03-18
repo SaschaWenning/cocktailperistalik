@@ -17,7 +17,7 @@ import PumpCleaning from "@/components/pump-cleaning"
 import IngredientLevels from "@/components/ingredient-levels"
 import ShotSelector from "@/components/shot-selector"
 import PasswordModal from "@/components/password-modal"
-import RecipeEditor from "@/components/recipe-editor"
+
 import RecipeCreator from "@/components/recipe-creator"
 import DeleteConfirmation from "@/components/delete-confirmation"
 import ImageEditor from "@/components/image-editor"
@@ -875,6 +875,10 @@ export default function Home() {
     pumpConfig,
     ingredientLevels,
     allIngredients,
+    onNext,
+    onPrev,
+    hasPrev,
+    hasNext,
   }: {
     cocktail: Cocktail
     onBack: () => void
@@ -885,6 +889,10 @@ export default function Home() {
     pumpConfig: PumpConfig[]
     ingredientLevels: IngredientLevel[]
     allIngredients: any[]
+    onNext: () => void
+    onPrev: () => void
+    hasPrev: boolean
+    hasNext: boolean
   }) {
     const [detailImageSrc, setDetailImageSrc] = useState<string>("")
     const [detailImageLoaded, setDetailImageLoaded] = useState<boolean>(false)
@@ -901,6 +909,15 @@ export default function Home() {
     useEffect(() => {
       window.scrollTo({ top: 0, behavior: "smooth" })
     }, [cocktail.id])
+
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "ArrowRight" && hasNext) onNext()
+        if (e.key === "ArrowLeft" && hasPrev) onPrev()
+      }
+      window.addEventListener("keydown", handleKeyDown)
+      return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [hasNext, hasPrev, onNext, onPrev])
 
     const handleDetailImageError = () => {
       setDetailImageSrc(`/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`)
@@ -932,6 +949,7 @@ export default function Home() {
       })
 
     return (
+      <>
       <Card className="overflow-hidden transition-all bg-black border-[hsl(var(--cocktail-card-border))] ring-2 ring-[hsl(var(--cocktail-primary))] shadow-2xl">
         <div className="flex flex-col md:flex-row">
           <div className="relative w-full md:w-1/3 h-48 md:h-64 bg-gray-900">
@@ -1048,14 +1066,6 @@ export default function Home() {
                   >
                     {isMaking ? "Zubereitung läuft..." : "Cocktail zubereiten"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))]"
-                    onClick={() => onEdit(cocktail.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Bearbeiten
-                  </Button>
                 </div>
               </div>
             </div>
@@ -1079,6 +1089,37 @@ export default function Home() {
             </div>
           )}
       </Card>
+
+      {/* Navigations-Pfeile */}
+      <div className="flex justify-between items-center mt-4 px-1">
+        <Button
+          variant="outline"
+          onClick={onPrev}
+          disabled={!hasPrev}
+          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] disabled:opacity-30"
+        >
+          <ChevronLeft className="h-5 w-5" />
+          Vorheriger
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => onEdit(cocktail.id)}
+          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))]"
+        >
+          <Edit className="h-4 w-4" />
+          Bearbeiten
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onNext}
+          disabled={!hasNext}
+          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] disabled:opacity-30"
+        >
+          Nächster
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
+    </>
     )
   }
 
@@ -1120,6 +1161,18 @@ export default function Home() {
 
   const renderContent = () => {
     if (selectedCocktail) {
+      // Richtige Liste basierend auf aktuellem Tab
+      const navList =
+        activeTab === "virgin"
+          ? virginCocktails
+          : activeTab === "shots"
+            ? cocktailsData.filter((c) => !c.alcoholic)
+            : alcoholicCocktails
+
+      const currentIndex = navList.findIndex((c) => c.id === selectedCocktail.id)
+      const hasPrev = currentIndex > 0
+      const hasNext = currentIndex < navList.length - 1
+
       return (
         <CocktailDetail
           cocktail={selectedCocktail}
@@ -1131,6 +1184,10 @@ export default function Home() {
           pumpConfig={pumpConfig}
           ingredientLevels={ingredientLevels}
           allIngredients={allIngredientsData}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={() => hasPrev && setSelectedCocktail(navList[currentIndex - 1])}
+          onNext={() => hasNext && setSelectedCocktail(navList[currentIndex + 1])}
         />
       )
     }
@@ -1357,8 +1414,16 @@ export default function Home() {
           onSuccess={handleRecipeCreatorPasswordSuccess}
         />
 
+        {/* RecipeCreator für neue Rezepte */}
+        <RecipeCreator
+          isOpen={showRecipeCreator}
+          onClose={() => setShowRecipeCreator(false)}
+          onSave={handleNewRecipeSave}
+        />
+
+        {/* RecipeCreator für Bearbeitung (gleiche Komponente mit cocktail Prop) */}
         {showRecipeEditor && selectedCocktail && (
-          <RecipeEditor
+          <RecipeCreator
             isOpen={showRecipeEditor}
             onClose={() => {
               setShowRecipeEditor(false)
@@ -1369,12 +1434,6 @@ export default function Home() {
             onRequestDelete={handleRequestDelete}
           />
         )}
-
-        <RecipeCreator
-          isOpen={showRecipeCreator}
-          onClose={() => setShowRecipeCreator(false)}
-          onSave={handleNewRecipeSave}
-        />
 
         <DeleteConfirmation
           isOpen={showDeleteConfirmation}

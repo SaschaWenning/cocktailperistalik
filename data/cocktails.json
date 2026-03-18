@@ -524,5 +524,340 @@
         "instruction": "Langsam am Glasrand hinunterlaufen lassen für Sunrise-Effekt"
       }
     ]
+  },
+  {
+    "id": "caribbean-sunset",
+    "name": "Caribbean Sunset",
+    "description": "Tropischer Cocktail mit Rum, Malibu und Blue Curacao",
+    "image": "/images/cocktails/caribbean-sunset.jpg",
+    "alcoholic": true,
+    "ingredients": ["40ml Brauner Rum", "30ml Malibu", "40ml Maracujasaft", "10ml Blue Curacao", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 40 },
+      { "ingredientId": "malibu", "amount": 30 },
+      { "ingredientId": "passion-fruit-juice", "amount": 40 },
+      { "ingredientId": "blue-curacao", "amount": 10 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "night-in-blue",
+    "name": "Night in Blue",
+    "description": "Blauer Cocktail mit Malibu und Ananassaft",
+    "image": "/images/cocktails/night-in-blue.jpg",
+    "alcoholic": true,
+    "ingredients": ["40ml Malibu", "20ml Blue Curacao", "60ml Ananassaft"],
+    "recipe": [
+      { "ingredientId": "malibu", "amount": 40 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "pineapple-juice", "amount": 60 }
+    ]
+  },
+  {
+    "id": "el-mariachi",
+    "name": "El Mariachi",
+    "description": "Mexikanischer Cocktail mit Tequila und Vodka",
+    "image": "/images/cocktails/el-mariachi.jpg",
+    "alcoholic": true,
+    "ingredients": ["20ml Tequila", "20ml Vodka", "40ml Maracujasaft", "10ml Limettensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "tequila", "amount": 20 },
+      { "ingredientId": "vodka", "amount": 20 },
+      { "ingredientId": "passion-fruit-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10 }
+    ]
+  },
+  {
+    "id": "green-eyes",
+    "name": "Green Eyes",
+    "description": "Grüner Cocktail mit Blue Curacao und Vodka",
+    "image": "/images/cocktails/green-eyes.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Blue Curacao", "30ml Vodka", "80ml Orangensaft"],
+    "recipe": [
+      { "ingredientId": "blue-curacao", "amount": 30 },
+      { "ingredientId": "vodka", "amount": 30 },
+      { "ingredientId": "orange-juice", "amount": 80 }
+    ]
+  },
+  {
+    "id": "hot-legs",
+    "name": "Hot Legs",
+    "description": "Heißer tropischer Cocktail mit Malibu und Rum",
+    "image": "/images/cocktails/hot-legs.jpg",
+    "alcoholic": true,
+    "ingredients": ["20ml Malibu", "40ml Brauner Rum", "30ml Ananassaft", "10ml Blue Curacao", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "malibu", "amount": 20 },
+      { "ingredientId": "dark-rum", "amount": 40 },
+      { "ingredientId": "pineapple-juice", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 10 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "tropical-fusion",
+    "name": "Tropical Fusion",
+    "description": "Fusion aus Rum, Vodka und tropischen Früchten",
+    "image": "/images/cocktails/tropical-fusion.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Brauner Rum", "30ml Vodka", "40ml Maracujasaft", "30ml Orangensaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 30 },
+      { "ingredientId": "vodka", "amount": 30 },
+      { "ingredientId": "passion-fruit-juice", "amount": 40 },
+      { "ingredientId": "orange-juice", "amount": 30 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "sunny-fizz",
+    "name": "Sunny Fizz",
+    "description": "Sonniger Cocktail mit Rum, Malibu und tropischen Säften",
+    "image": "/images/cocktails/sunny-fizz.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Brauner Rum", "20ml Malibu", "40ml Ananassaft", "30ml Maracujasaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 30 },
+      { "ingredientId": "malibu", "amount": 20 },
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "passion-fruit-juice", "amount": 30 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "donnergurgler",
+    "name": "Donnergurgler",
+    "description": "Kräftiger Cocktail mit Rum, Vodka und Blue Curacao",
+    "image": "/images/cocktails/donnergurgler.jpg",
+    "alcoholic": true,
+    "ingredients": ["20ml Brauner Rum", "20ml Vodka", "10ml Blue Curacao", "40ml Ananassaft", "30ml Orangensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 20 },
+      { "ingredientId": "vodka", "amount": 20 },
+      { "ingredientId": "blue-curacao", "amount": 10 },
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "orange-juice", "amount": 30 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "don-juan",
+    "name": "Don Juan",
+    "description": "Eleganter Cocktail mit Tequila und Blue Curacao",
+    "image": "/images/cocktails/don-juan.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Tequila", "10ml Blue Curacao", "40ml Ananassaft", "30ml Maracujasaft"],
+    "recipe": [
+      { "ingredientId": "tequila", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 10 },
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "passion-fruit-juice", "amount": 30 }
+    ]
+  },
+  {
+    "id": "tropical-derby",
+    "name": "Tropical Derby",
+    "description": "Komplexer Gin-Cocktail mit tropischen Früchten",
+    "image": "/images/cocktails/tropical-derby.jpg",
+    "alcoholic": true,
+    "ingredients": ["40ml Gin", "40ml Orangensaft", "30ml Ananassaft", "20ml Maracujasaft", "10ml Limettensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "gin", "amount": 40 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "pineapple-juice", "amount": 30 },
+      { "ingredientId": "passion-fruit-juice", "amount": 20 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "vanity",
+    "name": "Vanity",
+    "description": "Eleganter Gin-Cocktail mit Ananas und Blue Curacao",
+    "image": "/images/cocktails/vanity.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Gin", "40ml Ananassaft", "10ml Limettensaft", "10ml Blue Curacao"],
+    "recipe": [
+      { "ingredientId": "gin", "amount": 30 },
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "blue-curacao", "amount": 10 }
+    ]
+  },
+  {
+    "id": "grauer-panther",
+    "name": "Grauer Panther",
+    "description": "Exotischer Cocktail mit Malibu, Blue Curacao und Grenadine",
+    "image": "/images/cocktails/grauer-panther.jpg",
+    "alcoholic": true,
+    "ingredients": ["20ml Malibu", "10ml Blue Curacao", "10ml Grenadine", "20ml Brauner Rum", "30ml Ananassaft", "20ml Orangensaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "malibu", "amount": 20 },
+      { "ingredientId": "blue-curacao", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10 },
+      { "ingredientId": "dark-rum", "amount": 20 },
+      { "ingredientId": "pineapple-juice", "amount": 30 },
+      { "ingredientId": "orange-juice", "amount": 20 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "sweet-cocktail",
+    "name": "Sweet Cocktail",
+    "description": "Süßer Cocktail mit Rum und Blue Curacao",
+    "image": "/images/cocktails/sweet-cocktail.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Brauner Rum", "20ml Blue Curacao", "40ml Orangensaft", "40ml Ananassaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "pineapple-juice", "amount": 40 }
+    ]
+  },
+  {
+    "id": "holiday",
+    "name": "Holiday",
+    "description": "Urlaubscocktail mit Tequila, Blue Curacao und Pfirsichlikör",
+    "image": "/images/cocktails/holiday.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Tequila", "20ml Blue Curacao", "40ml Orangensaft", "40ml Ananassaft", "10ml Pfirsichlikör"],
+    "recipe": [
+      { "ingredientId": "tequila", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "peach-liqueur", "amount": 10 }
+    ]
+  },
+  {
+    "id": "purple-rain",
+    "name": "Purple Rain",
+    "description": "Lila Cocktail mit Vodka, Blue Curacao und Schweppes Wild Berry",
+    "image": "/images/cocktails/purple-rain.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Vodka", "20ml Blue Curacao", "10ml Limettensaft", "10ml Grenadine", "60ml Schweppes Wild Berry"],
+    "recipe": [
+      { "ingredientId": "vodka", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10 },
+      { "ingredientId": "schweppes-wild-berry", "amount": 60, "manual": true, "instructions": "60ml Schweppes Wild Berry hinzufügen" }
+    ]
+  },
+  {
+    "id": "barbados",
+    "name": "Barbados",
+    "description": "Karibischer Cocktail mit Rum, Blue Curacao und Orangensaft",
+    "image": "/images/cocktails/barbados.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Brauner Rum", "20ml Blue Curacao", "50ml Orangensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "orange-juice", "amount": 50 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "bora-bora",
+    "name": "Bora Bora",
+    "description": "Alkoholfreier tropischer Cocktail mit Ananas und Maracuja",
+    "image": "/images/cocktails/bora-bora.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Ananassaft", "50ml Maracujasaft", "10ml Limettensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 50 },
+      { "ingredientId": "passion-fruit-juice", "amount": 50 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "sport-n-juicy",
+    "name": "Sport'n Juicy",
+    "description": "Erfrischender alkoholfreier Fruchtcocktail",
+    "image": "/images/cocktails/sport-n-juicy.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Ananassaft", "30ml Maracujasaft", "40ml Orangensaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 50 },
+      { "ingredientId": "passion-fruit-juice", "amount": 30 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "targa-911",
+    "name": "Targa 911",
+    "description": "Sportlicher alkoholfreier Cocktail mit tropischen Früchten",
+    "image": "/images/cocktails/targa-911.jpg",
+    "alcoholic": false,
+    "ingredients": ["40ml Ananassaft", "30ml Maracujasaft", "40ml Orangensaft", "10ml Limettensaft", "10ml Grenadine"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 40 },
+      { "ingredientId": "passion-fruit-juice", "amount": 30 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true }
+    ]
+  },
+  {
+    "id": "maro",
+    "name": "Maro",
+    "description": "Alkoholfreier Cocktail mit Maracuja und Orange",
+    "image": "/images/cocktails/maro.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Maracujasaft", "40ml Orangensaft", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "passion-fruit-juice", "amount": 50 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
+    "id": "coconut-kiss",
+    "name": "Coconut Kiss",
+    "description": "Alkoholfreier Kokos-Cocktail mit tropischen Früchten",
+    "image": "/images/cocktails/coconut-kiss.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Ananassaft", "40ml Orangensaft", "10ml Limettensaft", "10ml Grenadine", "20ml Kokossirup"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 50 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10, "delayed": true },
+      { "ingredientId": "coconut-syrup", "amount": 20 }
+    ]
+  },
+  {
+    "id": "virgin-colada",
+    "name": "Virgin Colada",
+    "description": "Alkoholfreie Pina Colada mit Kokossirup",
+    "image": "/images/cocktails/virgin-colada.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Ananassaft", "40ml Orangensaft", "10ml Limettensaft", "20ml Kokossirup"],
+    "recipe": [
+      { "ingredientId": "pineapple-juice", "amount": 50 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "coconut-syrup", "amount": 20 }
+    ]
+  },
+  {
+    "id": "virgin-solero",
+    "name": "Virgin Solero",
+    "description": "Alkoholfreier Solero mit Maracuja und Vanille",
+    "image": "/images/cocktails/virgin-solero.jpg",
+    "alcoholic": false,
+    "ingredients": ["50ml Maracujasaft", "40ml Orangensaft", "10ml Limettensaft", "10ml Vanillesirup"],
+    "recipe": [
+      { "ingredientId": "passion-fruit-juice", "amount": 50 },
+      { "ingredientId": "orange-juice", "amount": 40 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "vanilla-syrup", "amount": 10 }
+    ]
   }
 ]
