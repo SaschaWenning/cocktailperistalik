@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import type { Cocktail } from "@/types/cocktail"
 import { getAllIngredients } from "@/lib/ingredients"
 import { saveRecipe } from "@/lib/cocktail-machine"
-import { Loader2, ImageIcon, Plus, Minus, FolderOpen, X, ArrowLeft, Check, ArrowUp, Lock } from "lucide-react"
+import { Loader2, ImageIcon, Plus, Minus, FolderOpen, X, ArrowLeft, Check, ArrowUp, Lock, EyeOff } from "lucide-react"
 import FileBrowser from "./file-browser"
 
 interface RecipeCreatorProps {
@@ -18,9 +18,12 @@ interface RecipeCreatorProps {
   onClose: () => void
   onSave: (newCocktail: Cocktail) => void
   asTab?: boolean
+  cocktail?: Cocktail  // Optional: wenn gesetzt, wird bearbeitet statt neu erstellt
+  onRequestDelete?: (id: string) => void
 }
 
-export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }: RecipeCreatorProps) {
+export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false, cocktail, onRequestDelete }: RecipeCreatorProps) {
+  const isEditMode = !!cocktail
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [recipe, setRecipe] = useState<
@@ -30,6 +33,31 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
   const [alcoholic, setAlcoholic] = useState(true)
   const [sizes, setSizes] = useState<number[]>([200, 300, 400])
   const [saving, setSaving] = useState(false)
+  const [hidingCocktail, setHidingCocktail] = useState(false)
+
+  const handleHideCocktail = async () => {
+    if (!cocktail) return
+    try {
+      setHidingCocktail(true)
+      const response = await fetch("/api/hidden-cocktails")
+      const data = await response.json()
+      const hiddenCocktails: string[] = data.hiddenCocktails || []
+      if (!hiddenCocktails.includes(cocktail.id)) {
+        hiddenCocktails.push(cocktail.id)
+        await fetch("/api/hidden-cocktails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hiddenCocktails }),
+        })
+      }
+      onClose()
+      window.location.reload()
+    } catch (error) {
+      console.error("Fehler beim Ausblenden:", error)
+    } finally {
+      setHidingCocktail(false)
+    }
+  }
   const [ingredients, setIngredients] = useState(getAllIngredients())
   const [errors, setErrors] = useState<{
     name?: string
@@ -48,8 +76,34 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
   useEffect(() => {
     if (isOpen) {
       setIngredients(getAllIngredients())
+      
+      // Im Bearbeitungsmodus: Daten vom Cocktail laden
+      if (cocktail) {
+        setName(cocktail.name)
+        setDescription(cocktail.description || "")
+        setAlcoholic(cocktail.alcoholic)
+        setSizes(cocktail.sizes || [200, 300, 400])
+        setRecipe(
+          cocktail.recipe.map((item) => ({
+            ...item,
+            type: item.type || (item.manual === true ? "manual" : "automatic"),
+            instruction: item.instruction || "",
+            delayed: item.delayed || false,
+          })),
+        )
+        let imagePath = cocktail.image || ""
+        if (imagePath.startsWith("/placeholder")) {
+          setImageUrl("")
+        } else {
+          if (imagePath && !imagePath.startsWith("/") && !imagePath.startsWith("http")) {
+            imagePath = `/${imagePath}`
+          }
+          imagePath = imagePath.split("?")[0]
+          setImageUrl(imagePath)
+        }
+      }
     }
-  }, [isOpen])
+  }, [isOpen, cocktail])
 
   useEffect(() => {
     if (recipe.length === 0) {
@@ -97,10 +151,12 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
 
     setSaving(true)
     try {
-      const newCocktailId = `custom-${Date.now()}`
+      // Im Bearbeitungsmodus: vorhandene ID verwenden, sonst neue erstellen
+      const cocktailId = isEditMode && cocktail ? cocktail.id : `custom-${Date.now()}`
 
       const newCocktail: Cocktail = {
-        id: newCocktailId,
+        ...(isEditMode && cocktail ? cocktail : {}),
+        id: cocktailId,
         name: name.trim(),
         description: description.trim(),
         image: imageUrl || "/placeholder.svg?height=200&width=400",
@@ -126,13 +182,16 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
 
       window.scrollTo({ top: 0, behavior: "smooth" })
 
-      setName("")
-      setDescription("")
-      setRecipe([]) // Reset to empty, useEffect will add default
-      setImageUrl("")
-      setAlcoholic(true)
-      setSizes([200, 300, 400])
-      setErrors({})
+      // Nur im Erstellungsmodus zurücksetzen
+      if (!isEditMode) {
+        setName("")
+        setDescription("")
+        setRecipe([]) // Reset to empty, useEffect will add default
+        setImageUrl("")
+        setAlcoholic(true)
+        setSizes([200, 300, 400])
+        setErrors({})
+      }
     } catch (error) {
       console.error("Fehler beim Speichern:", error)
     } finally {
@@ -320,8 +379,12 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
         <div className="space-y-5 my-2 max-h-[65vh] overflow-y-auto pr-2">
           {/* Header */}
           <div className="text-center pb-2 border-b border-gray-700">
-            <h2 className="text-xl font-bold text-[#00ff00]">Neues Rezept erstellen</h2>
-            <p className="text-gray-400 text-sm mt-1">Erstelle deinen eigenen Cocktail</p>
+            <h2 className="text-xl font-bold text-[#00ff00]">
+              {isEditMode ? "Rezept bearbeiten" : "Neues Rezept erstellen"}
+            </h2>
+            <p className="text-gray-400 text-sm mt-1">
+              {isEditMode ? `Bearbeite "${cocktail?.name}"` : "Erstelle deinen eigenen Cocktail"}
+            </p>
           </div>
 
           {/* Basis-Informationen */}
@@ -677,6 +740,18 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
         <div className="flex justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-700">
           <p className="text-gray-500 text-xs">* Pflichtfeld</p>
           <div className="flex gap-3">
+            {isEditMode && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleHideCocktail}
+                disabled={hidingCocktail}
+                className="bg-transparent text-yellow-400 border-yellow-700 hover:bg-yellow-900/30 px-4 h-11"
+              >
+                <EyeOff className="mr-2 h-4 w-4" />
+                {hidingCocktail ? "..." : "Ausblenden"}
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -685,9 +760,9 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
             >
               Abbrechen
             </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={saving} 
+            <Button
+              onClick={handleSave}
+              disabled={saving}
               className="bg-[#00ff00] text-black hover:bg-[#00cc00] font-semibold px-8 h-11"
             >
               {saving ? (
@@ -696,7 +771,7 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false }
                   Speichern...
                 </>
               ) : (
-                "Rezept speichern"
+                isEditMode ? "Änderungen speichern" : "Rezept speichern"
               )}
             </Button>
           </div>
