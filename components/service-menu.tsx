@@ -13,7 +13,6 @@ import TabConfigSettings from "@/components/tab-config-settings"
 import CocktailGrid from "@/components/cocktail-grid"
 import ShotSelector from "@/components/shot-selector"
 import RecipeCreator from "@/components/recipe-creator"
-import RecipeListManager from "@/components/recipe-list-manager"
 import HiddenCocktailsManager from "@/components/hidden-cocktails-manager"
 import PasswordModal from "@/components/password-modal"
 import LightingControl from "@/components/lighting-control"
@@ -36,7 +35,6 @@ interface ServiceMenuProps {
   onDeleteCocktail?: (cocktailId: string) => void
   onNewRecipe?: (cocktail: any) => void
   onTabConfigReload?: () => void
-  onCocktailsReload?: () => void
 }
 
 export default function ServiceMenu({
@@ -52,7 +50,6 @@ export default function ServiceMenu({
   onDeleteCocktail,
   onNewRecipe,
   onTabConfigReload,
-  onCocktailsReload,
 }: ServiceMenuProps) {
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -60,7 +57,6 @@ export default function ServiceMenu({
   const [tabConfig, setTabConfig] = useState<AppConfig | null>(null)
   const [serviceTabs, setServiceTabs] = useState<string[]>([])
   const [showInfoModal, setShowInfoModal] = useState(false)
-  const [showRecipeCreator, setShowRecipeCreator] = useState(false)
 
   useEffect(() => {
     const loadTabConfig = async () => {
@@ -143,9 +139,24 @@ export default function ServiceMenu({
           <ShotSelector pumpConfig={pumpConfig} ingredientLevels={ingredientLevels} onShotComplete={onShotComplete} />
         )
       case "recipe-creator":
-        return null
-      case "recipe-lists":
-        return <RecipeListManager onCocktailsReload={onCocktailsReload} />
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-[hsl(var(--cocktail-text))]">Neues Rezept erstellen</h3>
+            <RecipeCreator
+              isOpen={true}
+              asTab={true}
+              onClose={() => {
+                const firstTab = serviceTabs.length > 0 ? serviceTabs[0] : "levels"
+                setActiveServiceTab(firstTab)
+              }}
+              onSave={(cocktail) => {
+                onNewRecipe?.(cocktail)
+                const firstTab = serviceTabs.length > 0 ? serviceTabs[0] : "levels"
+                setActiveServiceTab(firstTab)
+              }}
+            />
+          </div>
+        )
       case "beleuchtung":
         return <LightingControl />
       case "statistics":
@@ -223,13 +234,7 @@ export default function ServiceMenu({
   const renderServiceTabButton = (tabId: string, tabName: string) => (
     <Button
       key={tabId}
-      onClick={() => {
-        if (tabId === "recipe-creator") {
-          setShowRecipeCreator(true)
-        } else {
-          setActiveServiceTab(tabId)
-        }
-      }}
+      onClick={() => setActiveServiceTab(tabId)}
       className={`flex-shrink-0 whitespace-nowrap py-1.5 px-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl text-sm ${
         activeServiceTab === tabId
           ? "bg-[#00ff00] text-black scale-105"
@@ -304,15 +309,6 @@ export default function ServiceMenu({
       </div>
 
       <div className="min-h-[60vh]">{renderServiceContent()}</div>
-
-      <RecipeCreator
-        isOpen={showRecipeCreator}
-        onClose={() => setShowRecipeCreator(false)}
-        onSave={(cocktail) => {
-          onNewRecipe?.(cocktail)
-          setShowRecipeCreator(false)
-        }}
-      />
 
       {showInfoModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
