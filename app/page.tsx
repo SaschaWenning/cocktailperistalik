@@ -17,7 +17,7 @@ import PumpCleaning from "@/components/pump-cleaning"
 import IngredientLevels from "@/components/ingredient-levels"
 import ShotSelector from "@/components/shot-selector"
 import PasswordModal from "@/components/password-modal"
-
+import RecipeEditor from "@/components/recipe-editor"
 import RecipeCreator from "@/components/recipe-creator"
 import DeleteConfirmation from "@/components/delete-confirmation"
 import ImageEditor from "@/components/image-editor"
@@ -30,7 +30,7 @@ import IngredientManager from "@/components/ingredient-manager"
 import PumpCalibration from "@/components/pump-calibration"
 import { Progress } from "@/components/ui/progress"
 import { Check, GlassWater } from "lucide-react"
-
+import TermsOfService from "@/components/terms-of-service"
 import LightingControl from "@/components/lighting-control"
 
 // Anzahl der Cocktails pro Seite
@@ -38,7 +38,7 @@ const COCKTAILS_PER_PAGE = 9
 
 export default function Home() {
   const [selectedCocktail, setSelectedCocktail] = useState<Cocktail | null>(null)
-  const [selectedSize, setSelectedSize] = useState<number>(300)
+  const [selectedSize, setSelectedSize] = useState<number>(200)
   const [isMaking, setIsMaking] = useState(false)
   const [progress, setProgress] = useState<number>(0)
   const [statusMessage, setStatusMessage] = useState("")
@@ -75,7 +75,7 @@ export default function Home() {
 
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-
+  const [showTerms, setShowTerms] = useState(false)
 
   const handleCocktailPageChange = (page: number) => {
     setCurrentPage(page)
@@ -128,6 +128,11 @@ export default function Home() {
       } finally {
         setLoading(false)
       }
+    }
+
+    const termsAccepted = localStorage.getItem("cocktailbot-terms-accepted")
+    if (!termsAccepted) {
+      setShowTerms(true)
     }
 
     loadData()
@@ -582,9 +587,7 @@ export default function Home() {
       }
 
       const category = activeTab === "virgin" ? "virgin" : activeTab === "shots" ? "shots" : "cocktails"
-      // Übergebe die Füllstände für Multi-Pumpen-Verteilung
-      const levelsForApi = ingredientLevels.map(l => ({ pumpId: l.pumpId, currentLevel: l.currentLevel }))
-      await makeCocktail(cocktail, currentPumpConfig, selectedSize, category, levelsForApi)
+      await makeCocktail(cocktail, currentPumpConfig, selectedSize, category)
 
       clearInterval(intervalId)
       setProgress(100)
@@ -808,28 +811,25 @@ export default function Home() {
   }
 
   const findDetailImagePath = async (cocktail: Cocktail): Promise<string> => {
-    const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
-
-    if (!cocktail.image || cocktail.image.trim() === "") {
-      return placeholder
+    if (!cocktail.image) {
+      console.log(`[v0] No image specified for ${cocktail.name}, using placeholder`)
+      return `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
     }
 
     const filename = cocktail.image.split("/").pop() || cocktail.image
     const filenameWithoutExt = filename.replace(/\.[^/.]+$/, "")
     const originalExt = filename.split(".").pop()?.toLowerCase() || ""
+
     const imageExtensions = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"]
+
     const extensionsToTry = originalExt
       ? [originalExt, ...imageExtensions.filter((ext) => ext !== originalExt)]
       : imageExtensions
 
+    const basePaths = ["/images/cocktails/", "/", "", "/public/images/cocktails/", "/public/"]
+
     const strategies: string[] = []
 
-    // Originalpfad zuerst - ohne crossOrigin-Test, direkt versuchen
-    if (cocktail.image.startsWith("/") || cocktail.image.startsWith("http")) {
-      strategies.push(cocktail.image)
-    }
-
-    const basePaths = ["/images/cocktails/", "/images/", "/"]
     for (const basePath of basePaths) {
       for (const ext of extensionsToTry) {
         strategies.push(`${basePath}${filenameWithoutExt}.${ext}`)
@@ -837,32 +837,48 @@ export default function Home() {
       strategies.push(`${basePath}${filename}`)
     }
 
-    // Raspberry Pi Pfad über API
+    // Dieselben Fallback-Strategien wie in cocktail-card.tsx (inkl. /api/image für den Pi)
     strategies.push(
+      cocktail.image,
+      cocktail.image.startsWith("/") ? cocktail.image.substring(1) : cocktail.image,
+      cocktail.image.startsWith("/") ? cocktail.image : `/${cocktail.image}`,
       `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/${filename}`)}`,
+      `/api/image?path=${encodeURIComponent(`/home/pi/cocktailbot/cocktailbot-main/public/${filename}`)}`,
     )
 
-    const uniqueStrategies = [...new Set(strategies.filter((s) => s && s.trim() !== ""))]
+    const uniqueStrategies = [...new Set(strategies)]
 
-    for (const testPath of uniqueStrategies) {
+    console.log(
+      `[v0] Testing ${uniqueStrategies.length} detail image strategies for ${cocktail.name}:`,
+      uniqueStrategies.slice(0, 10),
+    )
+
+    for (let i = 0; i < uniqueStrategies.length; i++) {
+      const testPath = uniqueStrategies[i]
+
       try {
         const img = new Image()
-        // KEIN crossOrigin="anonymous" - das blockiert lokale Bilder
+        img.crossOrigin = "anonymous"
+
         const loadPromise = new Promise<boolean>((resolve) => {
           img.onload = () => resolve(true)
           img.onerror = () => resolve(false)
         })
+
         img.src = testPath
         const success = await loadPromise
+
         if (success) {
+          console.log(`[v0] ✅ Found working detail image for ${cocktail.name}: ${testPath}`)
           return testPath
         }
-      } catch {
-        // Weiter zur nächsten Strategie
+      } catch (error) {
+        // Fehler ignorieren und nächste Strategie versuchen
       }
     }
 
-    return placeholder
+    console.log(`[v0] ❌ No working detail image found for ${cocktail.name}, using placeholder`)
+    return `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
   }
 
   function CocktailDetail({
@@ -875,9 +891,9 @@ export default function Home() {
     pumpConfig,
     ingredientLevels,
     allIngredients,
+    onPrevious,
     onNext,
-    onPrev,
-    hasPrev,
+    hasPrevious,
     hasNext,
   }: {
     cocktail: Cocktail
@@ -889,41 +905,37 @@ export default function Home() {
     pumpConfig: PumpConfig[]
     ingredientLevels: IngredientLevel[]
     allIngredients: any[]
+    onPrevious: () => void
     onNext: () => void
-    onPrev: () => void
-    hasPrev: boolean
+    hasPrevious: boolean
     hasNext: boolean
   }) {
     const [detailImageSrc, setDetailImageSrc] = useState<string>("")
-    const [detailImageLoaded, setDetailImageLoaded] = useState<boolean>(false)
 
     useEffect(() => {
-      setDetailImageLoaded(false)
-      setDetailImageSrc("")
-      findDetailImagePath(cocktail).then((path) => {
-        setDetailImageSrc(path)
-        setDetailImageLoaded(true)
-      })
-    }, [cocktail.id, cocktail.image])
+      const loadDetailImage = async () => {
+        console.log(`[v0] CocktailDetail: Loading detail image for ${cocktail.name}`)
+        console.log(`[v0] CocktailDetail: Original cocktail.image = ${cocktail.image}`)
+        const imagePath = await findDetailImagePath(cocktail)
+        console.log(`[v0] CocktailDetail: Setting detail image path: ${imagePath}`)
+        setDetailImageSrc(imagePath)
+      }
+
+      loadDetailImage()
+    }, [cocktail])
 
     useEffect(() => {
       window.scrollTo({ top: 0, behavior: "smooth" })
     }, [cocktail.id])
 
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "ArrowRight" && hasNext) onNext()
-        if (e.key === "ArrowLeft" && hasPrev) onPrev()
-      }
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [hasNext, hasPrev, onNext, onPrev])
-
     const handleDetailImageError = () => {
-      setDetailImageSrc(`/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`)
+      console.log(`[v0] CocktailDetail: Image error for ${cocktail.name}, current src: ${detailImageSrc}`)
+      console.log(`[v0] CocktailDetail: Falling back to placeholder`)
+      const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`
+      setDetailImageSrc(placeholder)
     }
 
-    const availableSizes = cocktail.sizes || [200, 300, 400]
+    const availableSizes = cocktail.sizes || [200]
     const allAvailableSizes = availableSizes.sort((a, b) => a - b)
 
     const isCompleted = progress === 100
@@ -949,21 +961,19 @@ export default function Home() {
       })
 
     return (
-      <>
-      <Card className="overflow-hidden transition-all bg-black border-[hsl(var(--cocktail-card-border))] ring-2 ring-[hsl(var(--cocktail-primary))] shadow-2xl">
-        <div className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-1/3 h-48 md:h-64 bg-gray-900">
-            {detailImageLoaded && detailImageSrc && (
-              <img
-                src={detailImageSrc}
-                alt={cocktail.name}
-                className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-                onError={handleDetailImageError}
-              />
-            )}
-            {!detailImageLoaded && (
-              <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">Lädt...</div>
-            )}
+      <div className="space-y-4">
+        <Card className="overflow-hidden transition-all bg-black border-[hsl(var(--cocktail-card-border))] ring-2 ring-[hsl(var(--cocktail-primary))] shadow-2xl">
+          <div className="flex flex-col md:flex-row">
+          <div className="relative w-full md:w-1/3 h-48 md:h-64">
+            <img
+              src={detailImageSrc || "/placeholder.svg"}
+              alt={cocktail.name}
+              className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+              onError={handleDetailImageError}
+              onLoad={() => console.log(`[v0] CocktailDetail: Image loaded successfully: ${detailImageSrc}`)}
+              crossOrigin="anonymous"
+              key={`${cocktail.image}-${detailImageSrc}`}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-lg md:rounded-l-lg md:rounded-t-none" />
             <Badge
               variant={cocktail.alcoholic ? "default" : "default"}
@@ -1066,6 +1076,29 @@ export default function Home() {
                   >
                     {isMaking ? "Zubereitung läuft..." : "Cocktail zubereiten"}
                   </Button>
+                  {/* Navigation: Zurück / Weiter */}
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onPrevious}
+                      disabled={!hasPrevious}
+                      className="h-10 px-3 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] hover:text-[hsl(var(--cocktail-primary))] disabled:opacity-30"
+                    >
+                      <ChevronLeft className="h-5 w-5 mr-1" />
+                      Zurück
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onNext}
+                      disabled={!hasNext}
+                      className="h-10 px-3 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] hover:text-[hsl(var(--cocktail-primary))] disabled:opacity-30"
+                    >
+                      Weiter
+                      <ChevronRight className="h-5 w-5 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1088,38 +1121,21 @@ export default function Home() {
               </ul>
             </div>
           )}
-      </Card>
+        </Card>
 
-      {/* Navigations-Pfeile */}
-      <div className="flex justify-between items-center mt-4 px-1">
-        <Button
-          variant="outline"
-          onClick={onPrev}
-          disabled={!hasPrev}
-          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] disabled:opacity-30"
-        >
-          <ChevronLeft className="h-5 w-5" />
-          Vorheriger
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => onEdit(cocktail.id)}
-          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))]"
-        >
-          <Edit className="h-4 w-4" />
-          Bearbeiten
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onNext}
-          disabled={!hasNext}
-          className="flex items-center gap-2 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] disabled:opacity-30"
-        >
-          Nächster
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+        {/* Bearbeiten-Button unter der Card */}
+        <div className="flex justify-start">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(cocktail.id)}
+            className="h-10 px-4 bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))] hover:bg-[hsl(var(--cocktail-card-border))] hover:text-[hsl(var(--cocktail-primary))]"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Bearbeiten
+          </Button>
+        </div>
       </div>
-    </>
     )
   }
 
@@ -1161,17 +1177,23 @@ export default function Home() {
 
   const renderContent = () => {
     if (selectedCocktail) {
-      // Richtige Liste basierend auf aktuellem Tab
-      const navList =
-        activeTab === "virgin"
-          ? virginCocktails
-          : activeTab === "shots"
-            ? cocktailsData.filter((c) => !c.alcoholic)
-            : alcoholicCocktails
+      // Navigation: alle Cocktails (alkoholisch + alkoholfrei) in einer Liste
+      const allCocktailsList = [...alcoholicCocktails, ...virginCocktails]
+      const currentIndex = allCocktailsList.findIndex((c) => c.id === selectedCocktail.id)
+      const hasPrevious = currentIndex > 0
+      const hasNext = currentIndex < allCocktailsList.length - 1
 
-      const currentIndex = navList.findIndex((c) => c.id === selectedCocktail.id)
-      const hasPrev = currentIndex > 0
-      const hasNext = currentIndex < navList.length - 1
+      const handlePrevious = () => {
+        if (hasPrevious) {
+          setSelectedCocktail(allCocktailsList[currentIndex - 1])
+        }
+      }
+
+      const handleNext = () => {
+        if (hasNext) {
+          setSelectedCocktail(allCocktailsList[currentIndex + 1])
+        }
+      }
 
       return (
         <CocktailDetail
@@ -1184,10 +1206,10 @@ export default function Home() {
           pumpConfig={pumpConfig}
           ingredientLevels={ingredientLevels}
           allIngredients={allIngredientsData}
-          hasPrev={hasPrev}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          hasPrevious={hasPrevious}
           hasNext={hasNext}
-          onPrev={() => hasPrev && setSelectedCocktail(navList[currentIndex - 1])}
-          onNext={() => hasNext && setSelectedCocktail(navList[currentIndex + 1])}
         />
       )
     }
@@ -1291,7 +1313,6 @@ export default function Home() {
             onDeleteCocktail={handleDeleteClick}
             onNewRecipe={handleNewRecipeSave}
             onTabConfigReload={reloadTabConfig}
-            onCocktailsReload={loadCocktails}
           />
         )
       default:
@@ -1328,8 +1349,14 @@ export default function Home() {
     syncLevels()
   }, [pumpConfig])
 
+  const handleTermsAccept = () => {
+    setShowTerms(false)
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
+      {showTerms && <TermsOfService onAccept={handleTermsAccept} />}
+
       <div className="container mx-auto p-6 max-w-7xl">
         <header className="mb-8">
           <h1
@@ -1414,16 +1441,8 @@ export default function Home() {
           onSuccess={handleRecipeCreatorPasswordSuccess}
         />
 
-        {/* RecipeCreator für neue Rezepte */}
-        <RecipeCreator
-          isOpen={showRecipeCreator}
-          onClose={() => setShowRecipeCreator(false)}
-          onSave={handleNewRecipeSave}
-        />
-
-        {/* RecipeCreator für Bearbeitung (gleiche Komponente mit cocktail Prop) */}
         {showRecipeEditor && selectedCocktail && (
-          <RecipeCreator
+          <RecipeEditor
             isOpen={showRecipeEditor}
             onClose={() => {
               setShowRecipeEditor(false)
@@ -1434,6 +1453,12 @@ export default function Home() {
             onRequestDelete={handleRequestDelete}
           />
         )}
+
+        <RecipeCreator
+          isOpen={showRecipeCreator}
+          onClose={() => setShowRecipeCreator(false)}
+          onSave={handleNewRecipeSave}
+        />
 
         <DeleteConfirmation
           isOpen={showDeleteConfirmation}

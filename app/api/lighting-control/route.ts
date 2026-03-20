@@ -6,7 +6,7 @@ import path from "path"
 const execFileAsync = promisify(execFile)
 
 async function runLed(...args: string[]): Promise<void> {
-  const scriptPath = path.join(process.cwd(), "scripts", "led_client.py")
+  const scriptPath = path.join(process.cwd(), "led_client.py")
   console.log("[v0] LED command:", { scriptPath, args })
   try {
     const result = await execFileAsync("python3", [scriptPath, ...args])
