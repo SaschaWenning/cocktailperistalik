@@ -38,7 +38,7 @@ const COCKTAILS_PER_PAGE = 9
 
 export default function Home() {
   const [selectedCocktail, setSelectedCocktail] = useState<Cocktail | null>(null)
-  const [selectedSize, setSelectedSize] = useState<number>(300)
+  const [selectedSize, setSelectedSize] = useState<number>(200)
   const [isMaking, setIsMaking] = useState(false)
   const [progress, setProgress] = useState<number>(0)
   const [statusMessage, setStatusMessage] = useState("")
@@ -923,7 +923,7 @@ export default function Home() {
       setDetailImageSrc(`/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`)
     }
 
-    const availableSizes = cocktail.sizes || [200, 300, 400]
+    const availableSizes = cocktail.sizes || [200]
     const allAvailableSizes = availableSizes.sort((a, b) => a - b)
 
     const isCompleted = progress === 100
