@@ -139,6 +139,28 @@
     ]
   },
   {
+    "id": "gin-tonic",
+    "name": "Gin & Tonic",
+    "description": "Klassischer Longdrink mit Gin und Tonic Water",
+    "image": "/images/cocktails/gin_tonic.jpg",
+    "alcoholic": true,
+    "ingredients": ["50ml Gin", "150ml Tonic Water", "Limettenscheibe"],
+    "recipe": [{ "ingredientId": "gin", "amount": 50 }, { "ingredientId": "tonic-water", "amount": 150 }]
+  },
+  {
+    "id": "cuba-libre",
+    "name": "Cuba Libre",
+    "description": "Rum-Cola mit einem Spritzer Limette",
+    "image": "/images/cocktails/cuba_libre.jpg",
+    "alcoholic": true,
+    "ingredients": ["50ml brauner Rum", "150ml Cola", "10ml Limettensaft"],
+    "recipe": [
+      { "ingredientId": "dark-rum", "amount": 50 },
+      { "ingredientId": "cola", "amount": 150 },
+      { "ingredientId": "lime-juice", "amount": 10 }
+    ]
+  },
+  {
     "id": "long-island-iced-tea",
     "name": "Long Island Iced Tea",
     "description": "Klassischer, starker Cocktail mit fünf verschiedenen Spirituosen und Cola",
@@ -183,6 +205,32 @@
       { "ingredientId": "pineapple-juice", "amount": 80 },
       { "ingredientId": "lime-juice", "amount": 20 },
       { "ingredientId": "grenadine", "amount": 20, "delayed": true }
+    ]
+  },
+  {
+    "id": "swimming-pool",
+    "name": "Swimming Pool",
+    "description": "Blauer, tropischer Cocktail mit Vodka und Ananassaft",
+    "image": "/images/cocktails/swimming_pool.jpg",
+    "alcoholic": true,
+    "ingredients": [
+      "60ml Vodka",
+      "30ml Blue Curacao",
+      "180ml Ananassaft",
+      "20ml Sahne (manuell)",
+      "20ml Cream of Coconut (manuell)"
+    ],
+    "recipe": [
+      { "ingredientId": "vodka", "amount": 60 },
+      { "ingredientId": "blue-curacao", "amount": 30 },
+      { "ingredientId": "pineapple-juice", "amount": 180 },
+      { "ingredientId": "cream", "amount": 20, "manual": true, "instructions": "20ml Sahne hinzufügen" },
+      {
+        "ingredientId": "cream-of-coconut",
+        "amount": 20,
+        "manual": true,
+        "instructions": "20ml Cream of Coconut hinzufügen"
+      }
     ]
   },
   {
@@ -263,7 +311,7 @@
     "id": "tropical-sunrise",
     "name": "Tropical Sunrise",
     "description": "Erfrischender alkoholfreier Cocktail mit Ananas, Orange und Grenadine",
-    "image": "/images/cocktails/tropicalsunrise.png",
+    "image": "/images/cocktails/tropical-blend.png",
     "alcoholic": false,
     "ingredients": ["120ml Ananassaft", "120ml Orangensaft", "20ml Grenadine", "10ml Limettensaft"],
     "recipe": [
@@ -353,7 +401,7 @@
     "id": "tropical-sunset",
     "name": "Tropical Sunset",
     "description": "Schöner Farbverlauf mit Ananas, Orange und Grenadine",
-    "image": "/images/cocktails/tropicalsunset.png",
+    "image": "/images/cocktails/tropical-sunset.png",
     "alcoholic": false,
     "ingredients": ["120ml Ananassaft", "80ml Orangensaft", "15ml Grenadine"],
     "recipe": [
@@ -481,7 +529,7 @@
     "id": "caribbean-sunset",
     "name": "Caribbean Sunset",
     "description": "Tropischer Cocktail mit Rum, Malibu und Blue Curacao",
-    "image": "/images/cocktails/caribbeansunset.png",
+    "image": "/images/cocktails/caribbean-sunset.jpg",
     "alcoholic": true,
     "ingredients": ["40ml Brauner Rum", "30ml Malibu", "40ml Maracujasaft", "10ml Blue Curacao", "10ml Limettensaft"],
     "recipe": [
@@ -496,7 +544,7 @@
     "id": "night-in-blue",
     "name": "Night in Blue",
     "description": "Blauer Cocktail mit Malibu und Ananassaft",
-    "image": "/images/cocktails/nightinblue.png",
+    "image": "/images/cocktails/night-in-blue.jpg",
     "alcoholic": true,
     "ingredients": ["40ml Malibu", "20ml Blue Curacao", "60ml Ananassaft"],
     "recipe": [
@@ -509,7 +557,7 @@
     "id": "el-mariachi",
     "name": "El Mariachi",
     "description": "Mexikanischer Cocktail mit Tequila und Vodka",
-    "image": "/images/cocktails/elmariachi.png",
+    "image": "/images/cocktails/el-mariachi.jpg",
     "alcoholic": true,
     "ingredients": ["20ml Tequila", "20ml Vodka", "40ml Maracujasaft", "10ml Limettensaft", "10ml Grenadine"],
     "recipe": [
@@ -524,7 +572,7 @@
     "id": "green-eyes",
     "name": "Green Eyes",
     "description": "Grüner Cocktail mit Blue Curacao und Vodka",
-    "image": "/images/cocktails/greeneyes.png",
+    "image": "/images/cocktails/green-eyes.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Blue Curacao", "30ml Vodka", "80ml Orangensaft"],
     "recipe": [
@@ -537,7 +585,7 @@
     "id": "hot-legs",
     "name": "Hot Legs",
     "description": "Heißer tropischer Cocktail mit Malibu und Rum",
-    "image": "/images/cocktails/hotlegs.png",
+    "image": "/images/cocktails/hot-legs.jpg",
     "alcoholic": true,
     "ingredients": ["20ml Malibu", "40ml Brauner Rum", "30ml Ananassaft", "10ml Blue Curacao", "10ml Limettensaft"],
     "recipe": [
@@ -552,7 +600,7 @@
     "id": "tropical-fusion",
     "name": "Tropical Fusion",
     "description": "Fusion aus Rum, Vodka und tropischen Früchten",
-    "image": "/images/cocktails/tropicalfusion.png",
+    "image": "/images/cocktails/tropical-fusion.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Brauner Rum", "30ml Vodka", "40ml Maracujasaft", "30ml Orangensaft", "10ml Limettensaft"],
     "recipe": [
@@ -567,7 +615,7 @@
     "id": "sunny-fizz",
     "name": "Sunny Fizz",
     "description": "Sonniger Cocktail mit Rum, Malibu und tropischen Säften",
-    "image": "/images/cocktails/sunnyfizz.png",
+    "image": "/images/cocktails/sunny-fizz.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Brauner Rum", "20ml Malibu", "40ml Ananassaft", "30ml Maracujasaft", "10ml Limettensaft"],
     "recipe": [
@@ -582,7 +630,7 @@
     "id": "donnergurgler",
     "name": "Donnergurgler",
     "description": "Kräftiger Cocktail mit Rum, Vodka und Blue Curacao",
-    "image": "/images/cocktails/donnergurgler.png",
+    "image": "/images/cocktails/donnergurgler.jpg",
     "alcoholic": true,
     "ingredients": ["20ml Brauner Rum", "20ml Vodka", "10ml Blue Curacao", "40ml Ananassaft", "30ml Orangensaft", "10ml Grenadine"],
     "recipe": [
@@ -598,7 +646,7 @@
     "id": "don-juan",
     "name": "Don Juan",
     "description": "Eleganter Cocktail mit Tequila und Blue Curacao",
-    "image": "/images/cocktails/donjuan.png",
+    "image": "/images/cocktails/don-juan.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Tequila", "10ml Blue Curacao", "40ml Ananassaft", "30ml Maracujasaft"],
     "recipe": [
@@ -612,7 +660,7 @@
     "id": "tropical-derby",
     "name": "Tropical Derby",
     "description": "Komplexer Gin-Cocktail mit tropischen Früchten",
-    "image": "/images/cocktails/tropicalderby.png",
+    "image": "/images/cocktails/tropical-derby.jpg",
     "alcoholic": true,
     "ingredients": ["40ml Gin", "40ml Orangensaft", "30ml Ananassaft", "20ml Maracujasaft", "10ml Limettensaft", "10ml Grenadine"],
     "recipe": [
@@ -628,7 +676,7 @@
     "id": "vanity",
     "name": "Vanity",
     "description": "Eleganter Gin-Cocktail mit Ananas und Blue Curacao",
-    "image": "/images/cocktails/vanity.png",
+    "image": "/images/cocktails/vanity.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Gin", "40ml Ananassaft", "10ml Limettensaft", "10ml Blue Curacao"],
     "recipe": [
@@ -642,7 +690,7 @@
     "id": "grauer-panther",
     "name": "Grauer Panther",
     "description": "Exotischer Cocktail mit Malibu, Blue Curacao und Grenadine",
-    "image": "/images/cocktails/grauerpanther.png",
+    "image": "/images/cocktails/grauer-panther.jpg",
     "alcoholic": true,
     "ingredients": ["20ml Malibu", "10ml Blue Curacao", "10ml Grenadine", "20ml Brauner Rum", "30ml Ananassaft", "20ml Orangensaft", "10ml Limettensaft"],
     "recipe": [
@@ -659,7 +707,7 @@
     "id": "sweet-cocktail",
     "name": "Sweet Cocktail",
     "description": "Süßer Cocktail mit Rum und Blue Curacao",
-    "image": "/images/cocktails/sweetcocktail.png",
+    "image": "/images/cocktails/sweet-cocktail.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Brauner Rum", "20ml Blue Curacao", "40ml Orangensaft", "40ml Ananassaft"],
     "recipe": [
@@ -673,7 +721,7 @@
     "id": "holiday",
     "name": "Holiday",
     "description": "Urlaubscocktail mit Tequila, Blue Curacao und Pfirsichlikör",
-    "image": "/images/cocktails/holiday.png",
+    "image": "/images/cocktails/holiday.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Tequila", "20ml Blue Curacao", "40ml Orangensaft", "40ml Ananassaft", "10ml Pfirsichlikör"],
     "recipe": [
@@ -685,10 +733,25 @@
     ]
   },
   {
+    "id": "purple-rain",
+    "name": "Purple Rain",
+    "description": "Lila Cocktail mit Vodka, Blue Curacao und Schweppes Wild Berry",
+    "image": "/images/cocktails/purple-rain.jpg",
+    "alcoholic": true,
+    "ingredients": ["30ml Vodka", "20ml Blue Curacao", "10ml Limettensaft", "10ml Grenadine", "60ml Schweppes Wild Berry"],
+    "recipe": [
+      { "ingredientId": "vodka", "amount": 30 },
+      { "ingredientId": "blue-curacao", "amount": 20 },
+      { "ingredientId": "lime-juice", "amount": 10 },
+      { "ingredientId": "grenadine", "amount": 10 },
+      { "ingredientId": "schweppes-wild-berry", "amount": 60, "manual": true, "instructions": "60ml Schweppes Wild Berry hinzufügen" }
+    ]
+  },
+  {
     "id": "barbados",
     "name": "Barbados",
     "description": "Karibischer Cocktail mit Rum, Blue Curacao und Orangensaft",
-    "image": "/images/cocktails/barbados.png",
+    "image": "/images/cocktails/barbados.jpg",
     "alcoholic": true,
     "ingredients": ["30ml Brauner Rum", "20ml Blue Curacao", "50ml Orangensaft", "10ml Grenadine"],
     "recipe": [

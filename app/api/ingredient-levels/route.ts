@@ -4,6 +4,18 @@ import path from "path"
 
 const LEVELS_FILE = path.join(process.cwd(), "data", "ingredient-levels.json")
 
+// Default levels for all 18 pumps
+const getDefaultLevels = () => {
+  return Array.from({ length: 18 }, (_, i) => ({
+    pumpId: i + 1,
+    ingredient: `Zutat ${i + 1}`,
+    ingredientId: `ingredient-${i + 1}`,
+    currentLevel: 1000,
+    containerSize: 1000,
+    lastUpdated: new Date().toISOString(),
+  }))
+}
+
 // GET - Load ingredient levels from file
 export async function GET() {
   try {
@@ -17,7 +29,16 @@ export async function GET() {
         lastUpdated: new Date(level.lastUpdated),
       })),
     })
-  } catch (error) {
+  } catch (error: any) {
+    // If file doesn't exist, return default levels (don't try to create file in preview)
+    if (error?.code === "ENOENT") {
+      console.log("ingredient-levels.json not found, returning defaults")
+      return NextResponse.json({
+        success: true,
+        levels: getDefaultLevels(),
+      })
+    }
+    
     console.error("Error loading ingredient levels:", error)
     return NextResponse.json(
       {

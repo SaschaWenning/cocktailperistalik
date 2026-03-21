@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const DEFAULT_STANDARD_SIZES = [200]
+const DEFAULT_STANDARD_SIZES = [200, 300, 400]
 
 export async function GET() {
   try {
