@@ -366,7 +366,8 @@ export default function Home() {
     if (!cocktailToDelete) return
 
     try {
-      await deleteRecipe(cocktailToDelete.id)      setCocktailsData((prev) => prev.filter((c) => c.id !== cocktailToDelete.id))
+      await deleteRecipe(cocktailToDelete.id)
+      setCocktailsData((prev) => prev.filter((c) => c.id !== cocktailToDelete.id))
 
       if (selectedCocktail?.id === cocktailToDelete.id) {
         setSelectedCocktail(null)
