@@ -33,8 +33,7 @@ export function IngredientLevels() {
   // Auto-Refresh während der Bearbeitung pausieren, danach fortsetzen
   const isEditing = editingLevel !== null || editingSize !== null || editingName !== null
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const unsubscribeRef = useRef<(() => void) | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)  const unsubscribeRef = useRef<(() => void) | null>(null)
   const fillingRef = useRef(false)
   const editingRef = useRef(false)
   const skipReloadUntil = useRef(0) // ts (ms). Solange now < ts: Reloads skippen
@@ -91,18 +90,12 @@ export function IngredientLevels() {
 
     loadLevels()
     unsubscribeRef.current = onIngredientLevelsUpdated(loadLevels)
-    intervalRef.current = setInterval(loadLevels, 10000)
+    // Kein auto-polling - Füllstände werden nur beim Öffnen und nach Zubereitung geladen
 
     return () => {
       if (unsubscribeRef.current) {
-        try {
-          unsubscribeRef.current()
-        } catch {}
+        try { unsubscribeRef.current() } catch {}
         unsubscribeRef.current = null
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
       }
     }
   }, [editingLevel, editingSize, editingName, isFilling])

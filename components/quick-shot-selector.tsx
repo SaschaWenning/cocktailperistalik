@@ -76,8 +76,6 @@ export default function QuickShotSelector({ pumpConfig, ingredientLevels, onShot
     setStatusMessage(`Entlüfte ${ingredientName}...`)
     setErrorMessage(null)
 
-    console.log("[v0] Shot preparation starting, activating LED mode: cocktailPreparation")
-
     let intervalId: NodeJS.Timeout
 
     try {
@@ -104,7 +102,6 @@ export default function QuickShotSelector({ pumpConfig, ingredientLevels, onShot
       setStatusMessage(`${ingredientName} fertig!`)
       setShowSuccess(true)
 
-      console.log("[v0] Shot finished, activating LED mode: cocktailFinished")
       await fetch("/api/lighting-control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +111,6 @@ export default function QuickShotSelector({ pumpConfig, ingredientLevels, onShot
       await onShotComplete()
 
       setTimeout(async () => {
-        console.log("[v0] Returning to idle LED mode after shot")
         await fetch("/api/lighting-control", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -75,9 +75,6 @@ export default function LightingControl() {
   const applyLighting = async (mode: "preparation" | "finished" | "idle" | "off", isTest = false) => {
     setApplying(mode)
     try {
-      console.log("[v0] Applying lighting mode:", mode, "isTest:", isTest)
-
-      console.log("[v0] Saving config before applying:", config)
       const saveResponse = await fetch("/api/lighting-config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,7 +84,6 @@ export default function LightingControl() {
       if (!saveResponse.ok) {
         throw new Error("Failed to save configuration")
       }
-      console.log("[v0] Config saved successfully")
 
       let body: any = {}
 
@@ -127,11 +123,8 @@ export default function LightingControl() {
         body: JSON.stringify(body),
       })
 
-      console.log("[v0] API response status:", res.status)
-
       if (!res.ok) {
         const errorText = await res.text()
-        console.error("[v0] API error response:", errorText)
         throw new Error(`HTTP ${res.status}: ${errorText}`)
       }
 
@@ -149,7 +142,6 @@ export default function LightingControl() {
         })
 
         setTimeout(async () => {
-          console.log("[v0] Test complete, returning to idle mode")
           await fetch("/api/lighting-control", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -162,10 +154,8 @@ export default function LightingControl() {
           description: `${modeNames[mode] || mode} Beleuchtung wurde dauerhaft aktiviert und gespeichert.`,
         })
       }
-
-      console.log("[v0] Lighting applied and saved successfully")
     } catch (error) {
-      console.error("[v0] Error applying lighting:", error)
+      console.error("Error applying lighting:", error)
       const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler"
       toast({
         title: "Fehler beim Anwenden",
@@ -194,10 +184,8 @@ export default function LightingControl() {
       if (!response.ok) {
         throw new Error("Failed to set brightness")
       }
-
-      console.log("[v0] Brightness set to:", value)
     } catch (error) {
-      console.error("[v0] Error setting brightness:", error)
+      console.error("Error setting brightness:", error)
       toast({
         title: "Fehler",
         description: "Helligkeit konnte nicht angewendet werden",
@@ -233,9 +221,8 @@ export default function LightingControl() {
         description: `Helligkeit auf ${Math.round((tempBrightness / 255) * 100)}% eingestellt.`,
       })
 
-      console.log("[v0] Brightness set to:", tempBrightness)
     } catch (error) {
-      console.error("[v0] Error setting brightness:", error)
+      console.error("Error setting brightness:", error)
       toast({
         title: "Fehler",
         description: "Helligkeit konnte nicht angewendet werden",

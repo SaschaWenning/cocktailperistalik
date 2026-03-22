@@ -135,7 +135,6 @@ export default function Statistics() {
 
       const ingredients = getAllIngredients()
       setAllIngredients(ingredients)
-      console.log("[v0] Loaded all ingredients including custom:", ingredients.length)
 
       // Load from localStorage
       const stored = localStorage.getItem(STORAGE_KEY)
@@ -174,17 +173,14 @@ export default function Statistics() {
       if (storedPrices) {
         const prices = JSON.parse(storedPrices)
         setIngredientPrices(prices)
-        console.log("[v0] Loaded saved prices:", prices.length)
       }
-
-      console.log("[v0] Loaded statistics from localStorage")
 
       toast({
         title: "Statistiken aktualisiert",
         description: "Die Statistiken wurden erfolgreich geladen.",
       })
     } catch (error) {
-      console.error("[v0] Error loading statistics:", error)
+      console.error("Error loading statistics:", error)
       setStatistics({
         logs: [],
         cocktailStats: [],
@@ -208,7 +204,6 @@ export default function Statistics() {
     try {
       setSavingPrices(true)
       localStorage.setItem(PRICES_KEY, JSON.stringify(ingredientPrices))
-      console.log("[v0] Saved prices to localStorage:", ingredientPrices.length)
 
       // Update statistics with new prices
       if (statistics) {
@@ -236,10 +231,8 @@ export default function Statistics() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyStats))
       setStatistics(emptyStats)
       setShowResetDialog(false)
-
-      console.log("[v0] Reset statistics, kept prices")
     } catch (error) {
-      console.error("[v0] Error resetting statistics:", error)
+      console.error("Error resetting statistics:", error)
     }
   }
 

@@ -49,7 +49,6 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
   }
 
   const openKeyboard = () => {
-    console.log("[v0] Opening keyboard")
     setKeyboardValue(newIngredient.name)
     setShowKeyboard(true)
     setIsShiftActive(false)
@@ -59,7 +58,6 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
   const addIngredient = () => {
     if (!newIngredient.name.trim()) return
 
-    console.log("[v0] Adding ingredient:", newIngredient.name)
     const id = `custom-${Date.now()}-${newIngredient.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`
     const ingredient: Ingredient = {
       id,
@@ -75,7 +73,6 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
     setShowKeyboard(false)
     setIsShiftActive(false)
     setIsCapsLockActive(false)
-    console.log("[v0] Ingredient added and states reset")
   }
 
   const deleteIngredient = (id: string) => {
@@ -84,8 +81,21 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
   }
 
   const handleClose = () => {
-    console.log("[v0] Closing ingredient manager")
     onClose()
+  }
+
+  const handleKeyboardCancel = () => {
+    setKeyboardValue("")
+    setShowKeyboard(false)
+    setIsShiftActive(false)
+    setIsCapsLockActive(false)
+  }
+
+  const handleKeyboardConfirm = () => {
+    setNewIngredient((prev) => ({ ...prev, name: keyboardValue }))
+    setShowKeyboard(false)
+    setIsShiftActive(false)
+    setIsCapsLockActive(false)
   }
 
   const handleKeyPress = (key: string) => {
@@ -122,22 +132,6 @@ export function IngredientManager({ onClose }: IngredientManagerProps) {
 
   const handleClear = () => {
     setKeyboardValue("")
-  }
-
-  const handleKeyboardCancel = () => {
-    console.log("[v0] Keyboard cancelled")
-    setKeyboardValue("")
-    setShowKeyboard(false)
-    setIsShiftActive(false)
-    setIsCapsLockActive(false)
-  }
-
-  const handleKeyboardConfirm = () => {
-    console.log("[v0] Keyboard confirmed with value:", keyboardValue)
-    setNewIngredient((prev) => ({ ...prev, name: keyboardValue }))
-    setShowKeyboard(false)
-    setIsShiftActive(false)
-    setIsCapsLockActive(false)
   }
 
   const alphaKeys = [

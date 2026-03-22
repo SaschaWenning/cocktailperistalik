@@ -12,6 +12,7 @@ export default function RecipeListManager({ onCocktailsReload }: { onCocktailsRe
   const [files, setFiles] = useState<string[]>([])
   const [currentFile, setCurrentFile] = useState("cocktails.json")
   const [cocktailCount, setCocktailCount] = useState(0)
+  const [activeListName, setActiveListName] = useState<string | null>(null)
   const [saveFileName, setSaveFileName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -33,6 +34,7 @@ export default function RecipeListManager({ onCocktailsReload }: { onCocktailsRe
       setFiles(data.files || [])
       setCurrentFile(data.currentFile || "cocktails.json")
       setCocktailCount(data.cocktailCount || 0)
+      setActiveListName(data.activeListName || null)
     } catch (error) {
       toast({ title: "Fehler", description: "Dateiliste konnte nicht geladen werden.", variant: "destructive" })
     } finally {
@@ -163,8 +165,15 @@ export default function RecipeListManager({ onCocktailsReload }: { onCocktailsRe
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[hsl(var(--cocktail-text))]">{currentFile}</p>
-              <p className="text-xs text-[hsl(var(--cocktail-text-muted))]">{cocktailCount} Rezepte geladen</p>
+              <p className="text-sm font-medium text-[hsl(var(--cocktail-text))]">{cocktailCount} Rezepte geladen</p>
+              {activeListName && (
+                <p className="text-xs text-[hsl(var(--cocktail-primary))] mt-0.5">
+                  {activeListName}
+                </p>
+              )}
+              {!activeListName && (
+                <p className="text-xs text-[hsl(var(--cocktail-text-muted))]">Standard-Liste</p>
+              )}
             </div>
             <Button
               variant="outline"
