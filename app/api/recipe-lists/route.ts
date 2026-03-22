@@ -7,7 +7,8 @@ import path from "path"
 
 // Auf dem Raspberry Pi liegt das Projekt in /home/pi/cocktailbot/cocktailbot-main/
 // process.cwd() könnte /home/pi/cocktailbot/ sein, daher expliziter Pfad
-const ACTIVE_LIST_PATH = path.join(process.env.COCKTAILS_DATA_DIR || path.join(process.cwd(), "data"), "active-list.json")
+const COCKTAILS_DIR = process.env.COCKTAILS_DATA_DIR || path.join(process.cwd(), "data")
+const ACTIVE_LIST_PATH = path.join(COCKTAILS_DIR, "active-list.json")
 
 async function getActiveListName(): Promise<string | null> {
   try {

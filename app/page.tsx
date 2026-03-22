@@ -147,6 +147,17 @@ export default function Home() {
     }
   }
 
+  // Event-Listener für Füllstands-Änderungen - aktualisiert die Cocktail-Verfügbarkeitsanzeige
+  useEffect(() => {
+    const handleRefresh = () => {
+      setRefreshTrigger((prev) => prev + 1)
+      loadIngredientLevels()
+    }
+
+    window.addEventListener("cocktail-data-refresh", handleRefresh)
+    return () => window.removeEventListener("cocktail-data-refresh", handleRefresh)
+  }, [])
+
   useEffect(() => {
     const handleHiddenCocktailsChange = () => {
       loadCocktails()
@@ -728,12 +739,12 @@ export default function Home() {
 
     for (const testPath of Array.from(new Set(strategies))) {
       try {
-        const img = new Image()
         const success = await new Promise<boolean>((resolve) => {
+          const img = new Image()
           img.onload = () => resolve(true)
           img.onerror = () => resolve(false)
+          img.src = testPath
         })
-        img.src = testPath
         if (success) return testPath
       } catch {}
     }
