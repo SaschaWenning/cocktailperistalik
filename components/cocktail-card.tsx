@@ -25,54 +25,34 @@ export default function CocktailCard({
   pumpConfig,
   allIngredients,
 }: CocktailCardProps) {
-  const [imageSrc, setImageSrc] = useState<string>("")
-  const [imageLoaded, setImageLoaded] = useState<boolean>(false)
+  const placeholder = `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(cocktail.name)}`
+  const [imageSrc, setImageSrc] = useState<string>(placeholder)
 
+  // Bildpfad direkt berechnen ohne async Tests (die auf dem Server nicht funktionieren)
   useEffect(() => {
-    const loadImage = async () => {
-      const imagePath = await findImagePath(cocktail)
-      setImageSrc(imagePath)
-      setImageLoaded(true)
+    if (!cocktail.image) {
+      setImageSrc(placeholder)
+      return
     }
-    loadImage()
-  }, [cocktail.id, cocktail.image])
+    
+    // Pfad normalisieren - sicherstellen dass er mit / beginnt
+    let imagePath = cocktail.image
+    if (!imagePath.startsWith("/") && !imagePath.startsWith("http")) {
+      imagePath = `/${imagePath}`
+    }
+    // Falls der Pfad nicht /images/ enthält, zu /images/cocktails/ hinzufügen
+    if (!imagePath.includes("/images/")) {
+      const filename = imagePath.split("/").pop() || imagePath
+      imagePath = `/images/cocktails/${filename}`
+    }
+    setImageSrc(imagePath)
+  }, [cocktail.id, cocktail.image, placeholder])
 
   const handleImageError = () => {
-    setImageSrc(`/placeholder.svg?height=300&width=300&query=${encodeURIComponent(cocktail.name)}`)
-  }
-
-  const findImagePath = async (cocktail: Cocktail): Promise<string> => {
-    const placeholder = `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(cocktail.name)}`
-
-    if (!cocktail.image) return placeholder
-
-    const filename = cocktail.image.split("/").pop() || cocktail.image
-    const filenameWithoutExt = filename.replace(/\.[^/.]+$/, "")
-    const originalExt = filename.split(".").pop()?.toLowerCase() || "jpg"
-
-    // Nur die wahrscheinlichsten Pfade testen - kein /api/image Aufruf
-    const strategies = [
-      cocktail.image.startsWith("/") || cocktail.image.startsWith("http") ? cocktail.image : `/${cocktail.image}`,
-      `/images/cocktails/${filenameWithoutExt}.${originalExt}`,
-      `/images/cocktails/${filename}`,
-      `/images/${filename}`,
-    ]
-
-    const uniqueStrategies = Array.from(new Set(strategies))
-
-    for (const testPath of uniqueStrategies) {
-      try {
-        const success = await new Promise<boolean>((resolve) => {
-          const img = new Image()
-          img.onload = () => resolve(true)
-          img.onerror = () => resolve(false)
-          img.src = testPath
-        })
-        if (success) return testPath
-      } catch {}
+    // Bei Fehler: Placeholder verwenden
+    if (imageSrc !== placeholder) {
+      setImageSrc(placeholder)
     }
-
-    return placeholder
   }
 
   const availability = useMemo(() => {
