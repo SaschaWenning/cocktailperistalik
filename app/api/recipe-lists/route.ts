@@ -7,16 +7,29 @@ import path from "path"
 
 // Auf dem Raspberry Pi liegt das Projekt in /home/pi/cocktailbot/cocktailbot-main/
 // process.cwd() könnte /home/pi/cocktailbot/ sein, daher expliziter Pfad
-const COCKTAILS_DIR = process.env.COCKTAILS_DATA_DIR || path.join(process.cwd(), "data")
+const ACTIVE_LIST_PATH = path.join(process.env.COCKTAILS_DATA_DIR || path.join(process.cwd(), "data"), "active-list.json")
+
+async function getActiveListName(): Promise<string | null> {
+  try {
+    const raw = await fs.readFile(ACTIVE_LIST_PATH, "utf-8")
+    const data = JSON.parse(raw)
+    return data.name || null
+  } catch {
+    return null
+  }
+}
+
+async function saveActiveListName(name: string): Promise<void> {
+  await fs.writeFile(ACTIVE_LIST_PATH, JSON.stringify({ name }), "utf-8")
+}
 
 // GET: Listet alle gespeicherten JSON-Dateien auf und gibt aktuelle Datei zurück
 export async function GET() {
   try {
     await fs.mkdir(COCKTAILS_DIR, { recursive: true })
     const files = await fs.readdir(COCKTAILS_DIR)
-    const jsonFiles = files.filter((f) => f.endsWith(".json") && f !== "pump-config.json" && f !== "lighting-config.json" && f !== "tab-config.json")
+    const jsonFiles = files.filter((f) => f.endsWith(".json") && f !== "pump-config.json" && f !== "lighting-config.json" && f !== "tab-config.json" && f !== "active-list.json")
 
-    // Aktuelle Cocktails laden
     const currentPath = path.join(COCKTAILS_DIR, "cocktails.json")
     let currentCocktails = []
     try {
@@ -24,13 +37,16 @@ export async function GET() {
       currentCocktails = JSON.parse(raw)
     } catch {}
 
+    const activeListName = await getActiveListName()
+
     return NextResponse.json({
       files: jsonFiles,
       currentFile: "cocktails.json",
       cocktailCount: currentCocktails.length,
+      activeListName,
     })
   } catch (error) {
-    console.error("[v0] Error listing recipe files:", error)
+    console.error("Error listing recipe files:", error)
     return NextResponse.json({ error: "Fehler beim Laden der Dateiliste" }, { status: 500 })
   }
 }
@@ -74,6 +90,9 @@ export async function POST(request: Request) {
       const cocktails = JSON.parse(raw)
       const currentPath = path.join(COCKTAILS_DIR, "cocktails.json")
       await fs.writeFile(currentPath, JSON.stringify(cocktails, null, 2), "utf-8")
+      // Namen ohne .json Endung persistieren
+      const displayName = fullName.replace(/\.json$/, "")
+      await saveActiveListName(displayName)
       return NextResponse.json({ success: true, message: `${fullName} geladen (${cocktails.length} Rezepte)` })
     }
 
