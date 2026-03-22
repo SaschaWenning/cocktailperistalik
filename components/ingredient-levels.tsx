@@ -33,7 +33,8 @@ export function IngredientLevels() {
   // Auto-Refresh während der Bearbeitung pausieren, danach fortsetzen
   const isEditing = editingLevel !== null || editingSize !== null || editingName !== null
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)  const unsubscribeRef = useRef<(() => void) | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
   const fillingRef = useRef(false)
   const editingRef = useRef(false)
   const skipReloadUntil = useRef(0) // ts (ms). Solange now < ts: Reloads skippen
