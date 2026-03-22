@@ -192,8 +192,6 @@ export function IngredientLevels() {
       }
 
       await loadLevels()
-
-      console.log("[v0] Ingredient-Levels: Triggering cocktail data refresh")
       window.dispatchEvent(new CustomEvent("cocktail-data-refresh"))
 
       handleCancel()

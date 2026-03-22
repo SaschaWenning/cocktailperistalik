@@ -62,12 +62,12 @@ export default function CocktailCard({
 
     for (const testPath of uniqueStrategies) {
       try {
-        const img = new Image()
         const success = await new Promise<boolean>((resolve) => {
+          const img = new Image()
           img.onload = () => resolve(true)
           img.onerror = () => resolve(false)
+          img.src = testPath
         })
-        img.src = testPath
         if (success) return testPath
       } catch {}
     }
