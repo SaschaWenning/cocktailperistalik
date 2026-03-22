@@ -29,7 +29,17 @@ export async function GET() {
   try {
     await fs.mkdir(COCKTAILS_DIR, { recursive: true })
     const files = await fs.readdir(COCKTAILS_DIR)
-    const jsonFiles = files.filter((f) => f.endsWith(".json") && f !== "pump-config.json" && f !== "lighting-config.json" && f !== "tab-config.json" && f !== "active-list.json")
+    // Alle Konfigurationsdateien und die aktuelle cocktails.json ausschließen
+    const excludedFiles = [
+      "pump-config.json",
+      "lighting-config.json",
+      "tab-config.json",
+      "active-list.json",
+      "hidden-cocktails.json",
+      "ingredient-levels.json",
+      "cocktails.json", // Die aktive Liste nicht als separate Option anzeigen
+    ]
+    const jsonFiles = files.filter((f) => f.endsWith(".json") && !excludedFiles.includes(f))
 
     const currentPath = path.join(COCKTAILS_DIR, "cocktails.json")
     let currentCocktails = []

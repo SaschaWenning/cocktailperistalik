@@ -720,36 +720,23 @@ export default function Home() {
     }
   }
 
-  const findDetailImagePath = async (cocktail: Cocktail): Promise<string> => {
+  // Bildpfad direkt berechnen ohne async Tests (die auf dem Server nicht funktionieren)
+  const getImagePath = (cocktail: Cocktail): string => {
     const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
 
     if (!cocktail.image || cocktail.image.trim() === "") return placeholder
 
-    const filename = cocktail.image.split("/").pop() || cocktail.image
-    const filenameWithoutExt = filename.replace(/\.[^/.]+$/, "")
-    const originalExt = filename.split(".").pop()?.toLowerCase() || "jpg"
-
-    // Nur die wahrscheinlichsten Pfade testen - kein /api/image Aufruf
-    const strategies = [
-      cocktail.image.startsWith("/") || cocktail.image.startsWith("http") ? cocktail.image : `/${cocktail.image}`,
-      `/images/cocktails/${filenameWithoutExt}.${originalExt}`,
-      `/images/cocktails/${filename}`,
-      `/images/${filename}`,
-    ]
-
-    for (const testPath of Array.from(new Set(strategies))) {
-      try {
-        const success = await new Promise<boolean>((resolve) => {
-          const img = new Image()
-          img.onload = () => resolve(true)
-          img.onerror = () => resolve(false)
-          img.src = testPath
-        })
-        if (success) return testPath
-      } catch {}
+    // Pfad normalisieren
+    let imagePath = cocktail.image
+    if (!imagePath.startsWith("/") && !imagePath.startsWith("http")) {
+      imagePath = `/${imagePath}`
     }
-
-    return placeholder
+    // Falls der Pfad nicht /images/ enthält, zu /images/cocktails/ hinzufügen
+    if (!imagePath.includes("/images/")) {
+      const filename = imagePath.split("/").pop() || imagePath
+      imagePath = `/images/cocktails/${filename}`
+    }
+    return imagePath
   }
 
   function CocktailDetail({
@@ -781,16 +768,11 @@ export default function Home() {
     hasPrev: boolean
     hasNext: boolean
   }) {
-    const [detailImageSrc, setDetailImageSrc] = useState<string>("")
-    const [detailImageLoaded, setDetailImageLoaded] = useState<boolean>(false)
+    const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
+    const [detailImageSrc, setDetailImageSrc] = useState<string>(() => getImagePath(cocktail))
 
     useEffect(() => {
-      setDetailImageLoaded(false)
-      setDetailImageSrc("")
-      findDetailImagePath(cocktail).then((path) => {
-        setDetailImageSrc(path)
-        setDetailImageLoaded(true)
-      })
+      setDetailImageSrc(getImagePath(cocktail))
     }, [cocktail.id, cocktail.image])
 
     useEffect(() => {
@@ -807,7 +789,9 @@ export default function Home() {
     }, [hasNext, hasPrev, onNext, onPrev])
 
     const handleDetailImageError = () => {
-      setDetailImageSrc(`/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.id)}`)
+      if (detailImageSrc !== placeholder) {
+        setDetailImageSrc(placeholder)
+      }
     }
 
     const availableSizes = cocktail.sizes || [200]
@@ -840,17 +824,12 @@ export default function Home() {
       <Card className="overflow-hidden transition-all bg-black border-[hsl(var(--cocktail-card-border))] ring-2 ring-[hsl(var(--cocktail-primary))] shadow-2xl">
         <div className="flex flex-col md:flex-row">
           <div className="relative w-full md:w-1/3 h-48 md:h-64 bg-gray-900">
-            {detailImageLoaded && detailImageSrc && (
-              <img
-                src={detailImageSrc}
-                alt={cocktail.name}
-                className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-                onError={handleDetailImageError}
-              />
-            )}
-            {!detailImageLoaded && (
-              <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">Lädt...</div>
-            )}
+            <img
+              src={detailImageSrc}
+              alt={cocktail.name}
+              className="w-full h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+              onError={handleDetailImageError}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-lg md:rounded-l-lg md:rounded-t-none" />
             <Badge
               variant={cocktail.alcoholic ? "default" : "default"}
