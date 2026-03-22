@@ -96,7 +96,18 @@ export default function FileBrowser({ isOpen, onClose, onSelectImage }: FileBrow
 
   const handleSelectImage = () => {
     if (selectedImage) {
-      onSelectImage(selectedImage)
+      // Absoluten Dateisystempfad in Web-Pfad umwandeln
+      // /home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/big_john.jpg
+      // => /images/cocktails/big_john.jpg
+      let webPath = selectedImage
+      if (webPath.includes("/public/")) {
+        webPath = webPath.split("/public")[1]
+      } else if (webPath.startsWith("/home/") || webPath.startsWith("/var/") || webPath.startsWith("/opt/")) {
+        // Kein /public/ im Pfad - nur Dateiname nehmen und in /images/cocktails/ legen
+        const filename = webPath.split("/").pop() || webPath
+        webPath = `/images/cocktails/${filename}`
+      }
+      onSelectImage(webPath)
       onClose()
     }
   }

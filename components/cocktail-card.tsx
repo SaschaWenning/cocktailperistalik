@@ -34,34 +34,31 @@ export default function CocktailCard({
       setImageSrc(placeholder)
       return
     }
-    
+
     let imagePath = cocktail.image
-    
+
     // Absoluten Dateisystempfad in Web-Pfad umwandeln
     // z.B. /home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/big_john.jpg
     // wird zu /images/cocktails/big_john.jpg
     if (imagePath.includes("/public/")) {
       imagePath = imagePath.split("/public")[1]
     } else if (imagePath.startsWith("/home/")) {
-      // Falls kein /public/ im Pfad, nur den Dateinamen extrahieren
       const filename = imagePath.split("/").pop() || imagePath
       imagePath = `/images/cocktails/${filename}`
     } else if (!imagePath.startsWith("/") && !imagePath.startsWith("http")) {
-      // Relativer Pfad - mit / beginnen
       imagePath = `/${imagePath}`
     }
-    
+
     // Falls der Pfad immer noch nicht /images/ enthält, zu /images/cocktails/ hinzufügen
     if (!imagePath.includes("/images/") && !imagePath.startsWith("http")) {
       const filename = imagePath.split("/").pop() || imagePath
       imagePath = `/images/cocktails/${filename}`
     }
-    
+
     setImageSrc(imagePath)
   }, [cocktail.id, cocktail.image, placeholder])
 
   const handleImageError = () => {
-    // Bei Fehler: Placeholder verwenden
     if (imageSrc !== placeholder) {
       setImageSrc(placeholder)
     }
