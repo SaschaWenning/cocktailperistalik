@@ -4,15 +4,10 @@ import { join } from "path"
 
 export async function GET() {
   try {
-    console.log("[v0] Starte Bildverzeichnis-Scan...")
-
     const directories = [
       "public",
       "public/images",
       "public/images/cocktails",
-      "cocktailbot-main/public",
-      "cocktailbot-main/public/images",
-      "cocktailbot-main/public/images/cocktails",
     ]
 
     const results: Record<string, string[]> = {}
@@ -20,15 +15,10 @@ export async function GET() {
     for (const dir of directories) {
       try {
         const fullPath = join(process.cwd(), dir)
-        console.log(`[v0] Scanne Verzeichnis: ${fullPath}`)
-
         const files = await readdir(fullPath)
         const imageFiles = files.filter((file) => /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(file))
-
         results[dir] = imageFiles
-        console.log(`[v0] Gefunden in ${dir}:`, imageFiles)
-      } catch (error) {
-        console.log(`[v0] Verzeichnis ${dir} nicht gefunden:`, error)
+      } catch {
         results[dir] = []
       }
     }
@@ -39,13 +29,7 @@ export async function GET() {
       totalImages: Object.values(results).flat().length,
     })
   } catch (error) {
-    console.error("[v0] Fehler beim Scannen der Bildverzeichnisse:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Fehler beim Scannen der Verzeichnisse",
-      },
-      { status: 500 },
-    )
+    console.error("Fehler beim Scannen der Bildverzeichnisse:", error)
+    return NextResponse.json({ success: false, error: "Fehler beim Scannen der Verzeichnisse" }, { status: 500 })
   }
 }
