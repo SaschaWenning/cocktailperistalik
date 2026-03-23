@@ -720,35 +720,19 @@ export default function Home() {
     }
   }
 
-  // Bildpfad direkt berechnen ohne async Tests (die auf dem Server nicht funktionieren)
+  // Bildpfad berechnen - immer über /api/image um absolute Pfade auf dem Pi zu unterstützen
   const getImagePath = (cocktail: Cocktail): string => {
     const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
-
     if (!cocktail.image || cocktail.image.trim() === "") return placeholder
-
-    let imagePath = cocktail.image
-    
-    // Absoluten Dateisystempfad in Web-Pfad umwandeln
-    // z.B. /home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/big_john.jpg
-    // wird zu /images/cocktails/big_john.jpg
-    if (imagePath.includes("/public/")) {
-      imagePath = imagePath.split("/public")[1]
-    } else if (imagePath.startsWith("/home/")) {
-      // Falls kein /public/ im Pfad, nur den Dateinamen extrahieren
-      const filename = imagePath.split("/").pop() || imagePath
-      imagePath = `/images/cocktails/${filename}`
-    } else if (!imagePath.startsWith("/") && !imagePath.startsWith("http")) {
-      // Relativer Pfad - mit / beginnen
-      imagePath = `/${imagePath}`
+    const imagePath = cocktail.image
+    // Bereits ein Placeholder oder externe URL
+    if (imagePath.startsWith("/placeholder") || imagePath.startsWith("http")) return imagePath
+    // Absoluter Dateisystempfad -> über API laden
+    if (imagePath.startsWith("/home/") || imagePath.startsWith("/var/") || imagePath.startsWith("/opt/") || imagePath.includes("/public/")) {
+      return `/api/image?path=${encodeURIComponent(imagePath)}`
     }
-    
-    // Falls der Pfad immer noch nicht /images/ enthält, zu /images/cocktails/ hinzufügen
-    if (!imagePath.includes("/images/") && !imagePath.startsWith("http")) {
-      const filename = imagePath.split("/").pop() || imagePath
-      imagePath = `/images/cocktails/${filename}`
-    }
-    
-    return imagePath
+    // Normaler Web-Pfad
+    return imagePath.startsWith("/") ? imagePath : `/${imagePath}`
   }
 
   function CocktailDetail({

@@ -14,8 +14,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Bildpfad ist erforderlich" }, { status: 400 })
     }
 
-    console.log("[v0] Image API: Loading image from path:", imagePath)
-
     let fullPath: string
 
     // Prüfe verschiedene mögliche Pfade
@@ -42,7 +40,6 @@ export async function GET(request: NextRequest) {
       }
 
       if (!fullPath) {
-        console.log("[v0] Image API: Image not found at any path:", possiblePaths)
         return NextResponse.json({ error: "Bild nicht gefunden" }, { status: 404 })
       }
     }
@@ -51,11 +48,9 @@ export async function GET(request: NextRequest) {
     try {
       await access(fullPath, constants.F_OK)
     } catch {
-      console.log("[v0] Image API: Image file does not exist:", fullPath)
       return NextResponse.json({ error: "Bilddatei existiert nicht" }, { status: 404 })
     }
 
-    // Lese Bilddatei
     const imageBuffer = await readFile(fullPath)
 
     // Bestimme Content-Type basierend auf Dateiendung
@@ -84,24 +79,14 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    console.log(
-      "[v0] Image API: Successfully loaded image:",
-      fullPath,
-      "Type:",
-      contentType,
-      "Size:",
-      imageBuffer.length,
-    )
-
-    // Gebe Bilddatei zurück
     return new NextResponse(imageBuffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600", // 1 Stunde Cache
+        "Cache-Control": "public, max-age=3600",
       },
     })
   } catch (error) {
-    console.error("[v0] Image API Error:", error)
+    console.error("Image API Error:", error)
     return NextResponse.json({ error: "Fehler beim Laden des Bildes" }, { status: 500 })
   }
 }
