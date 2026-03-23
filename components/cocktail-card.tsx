@@ -26,37 +26,29 @@ export default function CocktailCard({
   allIngredients,
 }: CocktailCardProps) {
   const placeholder = `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(cocktail.name)}`
-  const [imageSrc, setImageSrc] = useState<string>(placeholder)
 
-  // Bildpfad direkt berechnen ohne async Tests (die auf dem Server nicht funktionieren)
-  useEffect(() => {
-    if (!cocktail.image) {
-      setImageSrc(placeholder)
-      return
+  // Bildpfad berechnen - immer über /api/image um absolute Pfade auf dem Pi zu unterstützen
+  const resolveImageSrc = (imagePath: string | undefined): string => {
+    if (!imagePath) return placeholder
+    // Bereits ein Web-Pfad oder Placeholder
+    if (imagePath.startsWith("/placeholder") || imagePath.startsWith("http")) return imagePath
+    // Absoluter Dateisystempfad (z.B. /home/pi/...) -> über API laden
+    if (imagePath.startsWith("/home/") || imagePath.startsWith("/var/") || imagePath.startsWith("/opt/")) {
+      return `/api/image?path=${encodeURIComponent(imagePath)}`
     }
-
-    let imagePath = cocktail.image
-
-    // Absoluten Dateisystempfad in Web-Pfad umwandeln
-    // z.B. /home/pi/cocktailbot/cocktailbot-main/public/images/cocktails/big_john.jpg
-    // wird zu /images/cocktails/big_john.jpg
+    // Enthält /public/ -> über API mit absolutem Pfad
     if (imagePath.includes("/public/")) {
-      imagePath = imagePath.split("/public")[1]
-    } else if (imagePath.startsWith("/home/")) {
-      const filename = imagePath.split("/").pop() || imagePath
-      imagePath = `/images/cocktails/${filename}`
-    } else if (!imagePath.startsWith("/") && !imagePath.startsWith("http")) {
-      imagePath = `/${imagePath}`
+      return `/api/image?path=${encodeURIComponent(imagePath)}`
     }
+    // Normaler Web-Pfad wie /images/cocktails/big_john.jpg
+    return imagePath.startsWith("/") ? imagePath : `/${imagePath}`
+  }
 
-    // Falls der Pfad immer noch nicht /images/ enthält, zu /images/cocktails/ hinzufügen
-    if (!imagePath.includes("/images/") && !imagePath.startsWith("http")) {
-      const filename = imagePath.split("/").pop() || imagePath
-      imagePath = `/images/cocktails/${filename}`
-    }
+  const [imageSrc, setImageSrc] = useState<string>(() => resolveImageSrc(cocktail.image))
 
-    setImageSrc(imagePath)
-  }, [cocktail.id, cocktail.image, placeholder])
+  useEffect(() => {
+    setImageSrc(resolveImageSrc(cocktail.image))
+  }, [cocktail.id, cocktail.image])
 
   const handleImageError = () => {
     if (imageSrc !== placeholder) {
