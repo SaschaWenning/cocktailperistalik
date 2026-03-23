@@ -27,21 +27,12 @@ export default function CocktailCard({
 }: CocktailCardProps) {
   const placeholder = `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(cocktail.name)}`
 
-  // Bildpfad berechnen - immer über /api/image um absolute Pfade auf dem Pi zu unterstützen
+  // Bildpfad konsistent über /api/image auflösen.
+  // So funktionieren sowohl absolute Dateisystempfade als auch alte /images/...-Einträge.
   const resolveImageSrc = (imagePath: string | undefined): string => {
-    if (!imagePath) return placeholder
-    // Bereits ein Web-Pfad oder Placeholder
+    if (!imagePath || imagePath.trim() === "") return placeholder
     if (imagePath.startsWith("/placeholder") || imagePath.startsWith("http")) return imagePath
-    // Absoluter Dateisystempfad (z.B. /home/pi/...) -> über API laden
-    if (imagePath.startsWith("/home/") || imagePath.startsWith("/var/") || imagePath.startsWith("/opt/")) {
-      return `/api/image?path=${encodeURIComponent(imagePath)}`
-    }
-    // Enthält /public/ -> über API mit absolutem Pfad
-    if (imagePath.includes("/public/")) {
-      return `/api/image?path=${encodeURIComponent(imagePath)}`
-    }
-    // Normaler Web-Pfad wie /images/cocktails/big_john.jpg
-    return imagePath.startsWith("/") ? imagePath : `/${imagePath}`
+    return `/api/image?path=${encodeURIComponent(imagePath)}`
   }
 
   const [imageSrc, setImageSrc] = useState<string>(() => resolveImageSrc(cocktail.image))
