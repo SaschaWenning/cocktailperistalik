@@ -724,15 +724,16 @@ export default function Home() {
   const getImagePath = (cocktail: Cocktail): string => {
     const placeholder = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(cocktail.name)}`
     if (!cocktail.image || cocktail.image.trim() === "") return placeholder
-    const imagePath = cocktail.image
-    // Bereits ein Placeholder oder externe URL
-    if (imagePath.startsWith("/placeholder") || imagePath.startsWith("http")) return imagePath
-    // Absoluter Dateisystempfad -> über API laden
-    if (imagePath.startsWith("/home/") || imagePath.startsWith("/var/") || imagePath.startsWith("/opt/") || imagePath.includes("/public/")) {
-      return `/api/image?path=${encodeURIComponent(imagePath)}`
+
+    const imagePath = cocktail.image.trim()
+
+    // Placeholder oder externe URL direkt verwenden
+    if (imagePath.startsWith("/placeholder") || imagePath.startsWith("http")) {
+      return imagePath
     }
-    // Normaler Web-Pfad
-    return imagePath.startsWith("/") ? imagePath : `/${imagePath}`
+
+    // Alle lokalen Bildpfade konsistent über die API laden
+    return `/api/image?path=${encodeURIComponent(imagePath)}`
   }
 
   function CocktailDetail({
