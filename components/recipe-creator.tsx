@@ -98,9 +98,18 @@ export default function RecipeCreator({ isOpen, onClose, onSave, asTab = false, 
         for (const item of cocktail.recipe) {
           if (!allIngredients.find(ing => ing.id === item.ingredientId)) {
             // Zutat nicht gefunden - füge sie als unbekannte Zutat hinzu
+            // Custom-Zutaten haben das Format: custom-TIMESTAMP-name
+            let ingredientName = item.ingredientId
+            if (item.ingredientId.startsWith("custom-")) {
+              ingredientName = item.ingredientId.replace(/^custom-\d+-/, "").trim()
+              // Bindestriche durch Leerzeichen ersetzen und großschreiben
+              ingredientName = ingredientName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+            }
+            if (!ingredientName) ingredientName = "Unbekannte Zutat"
+            
             missingIngredients.push({
               id: item.ingredientId,
-              name: item.ingredientId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              name: ingredientName,
               alcoholic: cocktail.alcoholic,
             })
           }
