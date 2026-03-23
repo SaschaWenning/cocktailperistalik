@@ -14,48 +14,64 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Bildpfad ist erforderlich" }, { status: 400 })
     }
 
-    let fullPath: string
+    const possiblePaths: string[] = []
 
-    // Prüfe verschiedene mögliche Pfade
+    // Echte absolute Dateisystempfade
+    if (
+      imagePath.startsWith("/home/") ||
+      imagePath.startsWith("/var/") ||
+      imagePath.startsWith("/opt/") ||
+      imagePath.startsWith("/media/")
+    ) {
+      possiblePaths.push(imagePath)
+    }
+
+    // Absolute Projektpfade, die /public/ enthalten
+    if (imagePath.includes("/public/")) {
+      possiblePaths.push(imagePath)
+    }
+
+    // Webpfade wie /images/cocktails/foo.jpg
     if (imagePath.startsWith("/")) {
-      // Absoluter Pfad
-      fullPath = imagePath
+      const relativePath = imagePath.replace(/^\/+/, "")
+      possiblePaths.push(
+        path.join(process.cwd(), "public", relativePath),
+        path.join(process.cwd(), "cocktailbot-main", "public", relativePath),
+      )
     } else {
-      // Relativer Pfad - versuche verschiedene Basis-Pfade
-      const possiblePaths = [
+      possiblePaths.push(
         path.join(process.cwd(), "public", imagePath),
+        path.join(process.cwd(), "cocktailbot-main", "public", imagePath),
         path.join(process.cwd(), imagePath),
         imagePath,
-      ]
+      )
+    }
 
-      fullPath = ""
-      for (const testPath of possiblePaths) {
-        try {
-          await access(testPath, constants.F_OK)
-          fullPath = testPath
-          break
-        } catch {
-          // Datei existiert nicht an diesem Pfad
-        }
-      }
+    const uniquePaths = [...new Set(possiblePaths)]
 
-      if (!fullPath) {
-        return NextResponse.json({ error: "Bild nicht gefunden" }, { status: 404 })
+    let fullPath = ""
+
+    for (const testPath of uniquePaths) {
+      try {
+        await access(testPath, constants.F_OK)
+        fullPath = testPath
+        break
+      } catch {
+        // nächster Kandidat
       }
     }
 
-    // Prüfe ob Datei existiert
-    try {
-      await access(fullPath, constants.F_OK)
-    } catch {
-      return NextResponse.json({ error: "Bilddatei existiert nicht" }, { status: 404 })
+    if (!fullPath) {
+      return NextResponse.json(
+        { error: "Bild nicht gefunden", tried: uniquePaths },
+        { status: 404 },
+      )
     }
 
     const imageBuffer = await readFile(fullPath)
 
-    // Bestimme Content-Type basierend auf Dateiendung
     const ext = path.extname(fullPath).toLowerCase()
-    let contentType = "image/jpeg" // Default
+    let contentType = "image/jpeg"
 
     switch (ext) {
       case ".png":
