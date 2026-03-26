@@ -114,21 +114,16 @@ class PumpController:
         ch = self._validate_pump(pump_id)
         duty = self._speed_to_duty(speed_percent)
 
-        # 1) sauber stoppen
-        self.stop(pump_id)
-        time.sleep(0.5)
+        # 1) PWM aus (Sicherheitsstopp)
+        self.pca_pwm.channels[ch].duty_cycle = DUTY_OFF
+        time.sleep(0.05)
 
-        # 2) beide Richtungen sicher LOW lassen
-        self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
-        self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
-        time.sleep(0.5)
-
-        # 3) Vorwärtsrichtung setzen: IN1=LOW, IN2=HIGH
+        # 2) Richtung setzen: IN1=LOW, IN2=HIGH → Vorwärts
         self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
         self.pca_in2.channels[ch].duty_cycle = DUTY_FULL
-        time.sleep(0.5)
+        time.sleep(0.05)
 
-        # 4) PWM aktivieren
+        # 3) PWM aktivieren
         self.pca_pwm.channels[ch].duty_cycle = duty
 
     def reverse(self, pump_id: int, speed_percent: float = 100.0) -> None:
@@ -139,21 +134,16 @@ class PumpController:
         safe_speed = min(speed_percent, 60.0)
         duty = self._speed_to_duty(safe_speed)
 
-        # 1) sauber stoppen
-        self.stop(pump_id)
-        time.sleep(0.5)
+        # 1) PWM aus (Sicherheitsstopp)
+        self.pca_pwm.channels[ch].duty_cycle = DUTY_OFF
+        time.sleep(0.05)
 
-        # 2) beide Richtungen sicher LOW lassen
-        self.pca_in1.channels[ch].duty_cycle = DUTY_OFF
-        self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
-        time.sleep(0.5)
-
-        # 3) Rückwärtsrichtung setzen: IN1=HIGH, IN2=LOW
+        # 2) Richtung setzen: IN1=HIGH, IN2=LOW → Rückwärts
         self.pca_in1.channels[ch].duty_cycle = DUTY_FULL
         self.pca_in2.channels[ch].duty_cycle = DUTY_OFF
-        time.sleep(0.5)
+        time.sleep(0.05)
 
-        # 4) PWM aktivieren
+        # 3) PWM aktivieren
         self.pca_pwm.channels[ch].duty_cycle = duty
 
     def activate_multi(self, pumps: list) -> dict:
@@ -177,6 +167,9 @@ class PumpController:
         # Startzeit BEVOR irgendwas passiert
         start_time = time.monotonic()
 
+        # Anlaufzeit pro Pumpe (2x 50ms Delay in forward/reverse)
+        STARTUP_MS = 100.0
+
         # Alle Pumpen starten: mit start_delay gestaffelt
         for entry in pumps:
             pump_id      = int(entry["pump_id"])
@@ -195,16 +188,17 @@ class PumpController:
             else:
                 self.forward(pump_id, speed_pct)
 
-        # Jede Pumpe zur richtigen Zeit stoppen (sortiert nach Endzeit)
+        # Jede Pumpe zur richtigen Zeit stoppen
+        # end_time = start_delay + STARTUP_MS + duration_ms
         sorted_pumps = sorted(
             pumps,
-            key=lambda p: float(p.get("start_delay_ms", 0)) + float(p["duration_ms"])
+            key=lambda p: float(p.get("start_delay_ms", 0)) + STARTUP_MS + float(p["duration_ms"])
         )
         for entry in sorted_pumps:
             pump_id     = int(entry["pump_id"])
             duration_ms = float(entry["duration_ms"])
             start_delay = float(entry.get("start_delay_ms", 0))
-            end_time    = (start_delay + duration_ms) / 1000.0
+            end_time    = (start_delay + STARTUP_MS + duration_ms) / 1000.0
             elapsed     = time.monotonic() - start_time
             remaining   = end_time - elapsed
             if remaining > 0:
@@ -249,7 +243,11 @@ class PumpController:
             else:
                 self.forward(pump_id, speed_percent)
 
-            time.sleep(duration_ms / 1000.0)
+            # Anlaufzeit (2x 50ms) von der Wartezeit abziehen
+            # Mindestens 200ms Laufzeit damit die Pumpe nicht nur zuckt
+            effective_duration = max(duration_ms, 200.0)
+            wait_s = max(0, (effective_duration - 100.0) / 1000.0)
+            time.sleep(wait_s)
             self.stop(pump_id)
 
             return {

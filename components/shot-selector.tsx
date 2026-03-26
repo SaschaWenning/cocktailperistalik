@@ -99,13 +99,14 @@ export default function ShotSelector({ pumpConfig, ingredientLevels, onShotCompl
 
     try {
       try {
+        console.log("[v0] Shot: Activating preparation lighting")
         await fetch("/api/lighting-control", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mode: "cocktailPreparation" }),
         })
       } catch (error) {
-        console.error("Error activating preparation lighting:", error)
+        console.error("[v0] Error activating preparation lighting:", error)
       }
 
       intervalId = setInterval(() => {
@@ -124,13 +125,14 @@ export default function ShotSelector({ pumpConfig, ingredientLevels, onShotCompl
       setProgress(100)
 
       try {
+        console.log("[v0] Shot: Activating finished lighting")
         await fetch("/api/lighting-control", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mode: "cocktailFinished" }),
         })
       } catch (error) {
-        console.error("Error activating finished lighting:", error)
+        console.error("[v0] Error activating finished lighting:", error)
       }
 
       const ingredient = allIngredients.find((i) => i.id === selectedIngredient)
@@ -141,6 +143,7 @@ export default function ShotSelector({ pumpConfig, ingredientLevels, onShotCompl
       await onShotComplete()
 
       setTimeout(() => {
+        console.log("[v0] Shot: Returning to idle lighting")
         setIsMaking(false)
         setShowSuccess(false)
         setSelectedIngredient(null)

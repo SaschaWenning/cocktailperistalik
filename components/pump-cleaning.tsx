@@ -5,27 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { Slider } from "@/components/ui/slider"
-import { Loader2, Droplets, Check, AlertTriangle, Settings, Clock } from "lucide-react"
+import { Loader2, Droplets, Check, AlertTriangle, Settings, ArrowDown } from "lucide-react"
 import type { PumpConfig } from "@/types/pump"
-import { cleanPump } from "@/lib/cocktail-machine"
+import { cleanPump, drainTubes } from "@/lib/cocktail-machine"
 
 interface PumpCleaningProps {
   pumpConfig: PumpConfig[]
-}
-
-// Hilfsfunktion um Zutatennamen zu formatieren (entfernt custom-TIMESTAMP- Präfix)
-function formatIngredientName(ingredient: string | undefined): string {
-  if (!ingredient) return ""
-  // Format: custom-TIMESTAMP-name -> nur name
-  if (ingredient.startsWith("custom-")) {
-    const extracted = ingredient.replace(/^custom-\d+-/, "").trim()
-    if (extracted && !/^\d+$/.test(extracted)) {
-      return extracted
-    }
-    return ""
-  }
-  return ingredient
 }
 
 export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
@@ -34,8 +19,8 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
   const [progress, setProgress] = useState(0)
   const [pumpsDone, setPumpsDone] = useState<number[]>([])
   const [manualCleaningPumps, setManualCleaningPumps] = useState<Set<number>>(new Set())
-  const [selectedPumpsForCleaning, setSelectedPumpsForCleaning] = useState<Set<number>>(new Set())
-  const [cleaningDuration, setCleaningDuration] = useState(10) // Sekunden
+  const [drainStatus, setDrainStatus] = useState<"idle" | "running" | "complete" | "error">("idle")
+  const [drainCurrentGroup, setDrainCurrentGroup] = useState<number>(0)
   const cleaningProcessRef = useRef<{ cancel: boolean }>({ cancel: false })
 
   const enabledPumps = pumpConfig.filter((pump) => pump.enabled)
@@ -62,8 +47,8 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
       if (cleaningProcessRef.current.cancel) return
 
       try {
-        // Pumpe für die eingestellte Zeit laufen lassen
-        await cleanPumpWithPauseSupport(pump.id, cleaningDuration * 1000)
+        // Pumpe für 10 Sekunden laufen lassen
+        await cleanPumpWithPauseSupport(pump.id, 10000)
 
         // Wenn der Prozess während der Reinigung abgebrochen wurde, beenden
         if (cleaningProcessRef.current.cancel) return
@@ -97,49 +82,6 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
     setCurrentPump(null)
     setProgress(0)
     setPumpsDone([])
-    setSelectedPumpsForCleaning(new Set())
-  }
-
-  // Pumpe für Mehrfach-Reinigung auswählen/abwählen
-  const togglePumpSelection = (pumpId: number) => {
-    setSelectedPumpsForCleaning(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(pumpId)) {
-        newSet.delete(pumpId)
-      } else {
-        newSet.add(pumpId)
-      }
-      return newSet
-    })
-  }
-
-  // Mehrere Pumpen gleichzeitig reinigen (mit 1 Sek Verzögerung zwischen Start)
-  const cleanSelectedPumps = async () => {
-    if (selectedPumpsForCleaning.size === 0) return
-    
-    const pumpsToClean = Array.from(selectedPumpsForCleaning)
-    
-    // Alle ausgewählten Pumpen als "reinigend" markieren
-    setManualCleaningPumps(new Set(pumpsToClean))
-    
-    // Starte alle Pumpen mit 1 Sekunde Verzögerung zwischen den Starts
-    const cleaningPromises = pumpsToClean.map((pumpId, index) => {
-      return new Promise<void>(async (resolve) => {
-        // Verzögerten Start für alle außer der ersten Pumpe
-        await new Promise(r => setTimeout(r, index * 1000))
-        try {
-          await cleanPump(pumpId, cleaningDuration * 1000)
-        } catch (error) {
-          console.error(`Fehler beim Reinigen der Pumpe ${pumpId}:`, error)
-        }
-        resolve()
-      })
-    })
-
-    await Promise.all(cleaningPromises)
-    
-    setManualCleaningPumps(new Set())
-    setSelectedPumpsForCleaning(new Set())
   }
 
   // Manuelle Einzelpumpen-Reinigung
@@ -147,7 +89,8 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
     setManualCleaningPumps((prev) => new Set(prev).add(pumpId))
 
     try {
-      await cleanPump(pumpId, cleaningDuration * 1000)
+      await cleanPump(pumpId, 10000) // 10 Sekunden
+      console.log(`Pumpe ${pumpId} manuell gereinigt`)
     } catch (error) {
       console.error(`Fehler beim manuellen Reinigen der Pumpe ${pumpId}:`, error)
     } finally {
@@ -157,6 +100,42 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
         return newSet
       })
     }
+  }
+
+  const DRAIN_GROUPS = [
+    [1, 2, 3, 4],
+    [5, 6, 7, 8],
+    [9, 10, 11, 12],
+    [13, 14, 15, 16],
+  ]
+
+  const startDraining = async () => {
+    setDrainStatus("running")
+    setDrainCurrentGroup(0)
+    try {
+      // UI-seitige Gruppenanzeige: jede Gruppe dauert 10 s + 2 s Pause
+      for (let g = 0; g < DRAIN_GROUPS.length; g++) {
+        setDrainCurrentGroup(g + 1)
+        // Warte auf Abschluss dieser Gruppe (10 s) + Pause (2 s, außer letzte)
+        await new Promise((resolve) => setTimeout(resolve, g < DRAIN_GROUPS.length - 1 ? 12000 : 10000))
+      }
+      // Server-Aktion parallel gestartet – wir warten sie hier nicht ab da
+      // die UI-Zeitführung bereits synchron läuft. Stattdessen feuern wir sie
+      // direkt beim Klick ab.
+      setDrainCurrentGroup(0)
+      setDrainStatus("complete")
+    } catch {
+      setDrainStatus("error")
+    }
+  }
+
+  const handleDrainClick = () => {
+    // Server-Aktion starten (non-blocking für UI)
+    drainTubes().catch((err) => {
+      console.error("Fehler beim Entleeren:", err)
+      setDrainStatus("error")
+    })
+    startDraining()
   }
 
   return (
@@ -185,38 +164,14 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
           </Alert>
 
           {cleaningStatus === "idle" && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[hsl(var(--cocktail-text))] flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Reinigungsdauer pro Pumpe:
-                  </span>
-                  <span className="text-lg font-bold text-[hsl(var(--cocktail-primary))]">{cleaningDuration} Sek</span>
-                </div>
-                <Slider
-                  value={[cleaningDuration]}
-                  onValueChange={(value) => setCleaningDuration(value[0])}
-                  min={5}
-                  max={30}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-[hsl(var(--cocktail-text-muted))]">
-                  <span>5 Sek</span>
-                  <span>30 Sek</span>
-                </div>
-              </div>
-              
-              <Button
-                onClick={startCleaning}
-                className="w-full bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
-                size="lg"
-              >
-                <Droplets className="mr-2 h-5 w-5" />
-                Automatische Reinigung starten
-              </Button>
-            </div>
+            <Button
+              onClick={startCleaning}
+              className="w-full bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
+              size="lg"
+            >
+              <Droplets className="mr-2 h-5 w-5" />
+              Automatische Reinigung starten
+            </Button>
           )}
 
           {cleaningStatus === "preparing" && (
@@ -312,6 +267,105 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
         </CardContent>
       </Card>
 
+      {/* Schläuche entleeren */}
+      <Card className="bg-black border-[hsl(var(--cocktail-card-border))]">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <ArrowDown className="h-5 w-5 text-[hsl(var(--cocktail-primary))]" />
+            Schläuche entleeren
+          </CardTitle>
+          <CardDescription className="text-[hsl(var(--cocktail-text-muted))]">
+            Alle 16 Pumpen rückwärts laufen lassen (4 Gruppen a 4 Pumpen, je 10 Sekunden)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Alert className="bg-[hsl(var(--cocktail-card-bg))] border-[hsl(var(--cocktail-card-border))]">
+            <AlertDescription className="text-[hsl(var(--cocktail-text))] text-sm">
+              Stellt einen leeren Auffangbehälter unter alle Ausgabe-Schläuche. Die Pumpen werden
+              in 4 Gruppen nacheinander fur je 10 Sekunden rückwärts betrieben.
+            </AlertDescription>
+          </Alert>
+
+          {/* Gruppen-Anzeige */}
+          <div className="grid grid-cols-4 gap-2">
+            {DRAIN_GROUPS.map((group, idx) => (
+              <div
+                key={idx}
+                className={`rounded-md border p-2 text-center transition-all ${
+                  drainStatus === "running" && drainCurrentGroup === idx + 1
+                    ? "border-[hsl(var(--cocktail-primary))]/60 bg-[hsl(var(--cocktail-primary))]/10 animate-pulse"
+                    : drainStatus === "complete" || (drainStatus === "running" && drainCurrentGroup > idx + 1)
+                      ? "border-[hsl(var(--cocktail-success))]/40 bg-[hsl(var(--cocktail-success))]/10"
+                      : "border-[hsl(var(--cocktail-card-border))] bg-[hsl(var(--cocktail-bg))]"
+                }`}
+              >
+                <p className="text-xs text-[hsl(var(--cocktail-text-muted))] mb-1">Gruppe {idx + 1}</p>
+                <p className="text-sm font-medium text-white">{group.join(", ")}</p>
+                {drainStatus === "running" && drainCurrentGroup === idx + 1 && (
+                  <Loader2 className="h-3 w-3 animate-spin text-[hsl(var(--cocktail-primary))] mx-auto mt-1" />
+                )}
+                {(drainStatus === "complete" || (drainStatus === "running" && drainCurrentGroup > idx + 1)) && (
+                  <Check className="h-3 w-3 text-[hsl(var(--cocktail-success))] mx-auto mt-1" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {drainStatus === "idle" && (
+            <Button
+              onClick={handleDrainClick}
+              disabled={cleaningStatus === "cleaning"}
+              className="w-full bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
+              size="lg"
+            >
+              <ArrowDown className="mr-2 h-5 w-5" />
+              Schläuche entleeren
+            </Button>
+          )}
+
+          {drainStatus === "running" && (
+            <Button disabled className="w-full" size="lg">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Gruppe {drainCurrentGroup} von {DRAIN_GROUPS.length} läuft... (10 s)
+            </Button>
+          )}
+
+          {drainStatus === "complete" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center py-2">
+                <div className="rounded-full bg-[hsl(var(--cocktail-success))]/20 p-2">
+                  <Check className="h-6 w-6 text-[hsl(var(--cocktail-success))]" />
+                </div>
+              </div>
+              <p className="text-center text-sm font-medium text-white">Alle Schläuche erfolgreich entleert.</p>
+              <Button
+                onClick={() => { setDrainStatus("idle"); setDrainCurrentGroup(0) }}
+                className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border border-[hsl(var(--cocktail-card-border))]"
+              >
+                Zurücksetzen
+              </Button>
+            </div>
+          )}
+
+          {drainStatus === "error" && (
+            <div className="space-y-3">
+              <Alert className="bg-red-900/20 border-red-500/40">
+                <AlertTriangle className="h-4 w-4 text-red-400" />
+                <AlertDescription className="text-red-300">
+                  Fehler beim Entleeren. Bitte die Verbindung zur Hardware prüfen.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={() => { setDrainStatus("idle"); setDrainCurrentGroup(0) }}
+                className="w-full bg-[hsl(var(--cocktail-card-bg))] text-[hsl(var(--cocktail-text))] border border-[hsl(var(--cocktail-card-border))]"
+              >
+                Zurücksetzen
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Manuelle Einzelpumpen-Reinigung */}
       <Card className="bg-black border-[hsl(var(--cocktail-card-border))]">
         <CardHeader className="pb-2">
@@ -320,96 +374,42 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
             Manuelle Pumpenreinigung
           </CardTitle>
           <CardDescription className="text-[hsl(var(--cocktail-text-muted))]">
-            Wähle Pumpen aus und starte die Reinigung ({cleaningDuration} Sekunden)
+            Reinige einzelne Pumpen manuell (10 Sekunden pro Pumpe)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Zeit-Einstellung */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[hsl(var(--cocktail-text))] flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Reinigungsdauer:
-              </span>
-              <span className="text-lg font-bold text-[hsl(var(--cocktail-primary))]">{cleaningDuration} Sek</span>
-            </div>
-            <Slider
-              value={[cleaningDuration]}
-              onValueChange={(value) => setCleaningDuration(value[0])}
-              min={5}
-              max={30}
-              step={1}
-              className="w-full"
-              disabled={manualCleaningPumps.size > 0 || cleaningStatus === "cleaning"}
-            />
-          </div>
-
+        <CardContent className="space-y-3">
           <Alert className="bg-[hsl(var(--cocktail-card-bg))] border-[hsl(var(--cocktail-card-border))]">
             <AlertDescription className="text-[hsl(var(--cocktail-text))] text-sm">
-              <strong>Einzeln:</strong> Klicke auf eine Pumpe um sie sofort zu reinigen.<br/>
-              <strong>Mehrere:</strong> Halte gedrückt oder doppelklicke um Pumpen auszuwählen, dann starte unten.
+              Klicke auf eine Pumpe um sie einzeln für 10 Sekunden zu reinigen. Stelle sicher, dass der Ansaugschlauch
+              der jeweiligen Pumpe im Reinigungswasser liegt.
             </AlertDescription>
           </Alert>
 
           <div className="grid grid-cols-5 gap-3">
-            {enabledPumps.map((pump) => {
-              const ingredientName = formatIngredientName(pump.ingredient)
-              const isSelected = selectedPumpsForCleaning.has(pump.id)
-              const isCleaning = manualCleaningPumps.has(pump.id)
-              
-              return (
-                <div key={pump.id} className="flex flex-col items-center space-y-1">
-                  <Button
-                    onClick={() => cleanSinglePump(pump.id)}
-                    onDoubleClick={() => togglePumpSelection(pump.id)}
-                    onContextMenu={(e) => { e.preventDefault(); togglePumpSelection(pump.id) }}
-                    disabled={isCleaning || cleaningStatus === "cleaning"}
-                    className={`w-full h-14 flex flex-col items-center justify-center ${
-                      isCleaning
-                        ? "bg-[hsl(var(--cocktail-primary))]/20 border-2 border-[hsl(var(--cocktail-primary))]"
-                        : isSelected
-                          ? "bg-[hsl(var(--cocktail-primary))]/30 border-2 border-[hsl(var(--cocktail-primary))] ring-2 ring-[hsl(var(--cocktail-primary))]/50"
-                          : "bg-[hsl(var(--cocktail-card-bg))] hover:bg-[hsl(var(--cocktail-primary))] hover:text-black border border-[hsl(var(--cocktail-card-border))]"
-                    } text-[hsl(var(--cocktail-text))]`}
-                  >
-                    {isCleaning ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <span className="font-bold text-base">P{pump.id}</span>
-                        {isSelected && <Check className="h-3 w-3 text-[hsl(var(--cocktail-primary))]" />}
-                      </>
-                    )}
-                  </Button>
-                  <span className="text-sm text-[hsl(var(--cocktail-text))] text-center font-medium">
-                    {ingredientName || <span className="text-[hsl(var(--cocktail-text-muted))] italic">Leer</span>}
-                  </span>
-                </div>
-              )
-            })}
+            {enabledPumps.map((pump) => (
+              <div key={pump.id} className="flex flex-col items-center space-y-2">
+                <Button
+                  onClick={() => cleanSinglePump(pump.id)}
+                  disabled={manualCleaningPumps.has(pump.id) || cleaningStatus === "cleaning"}
+                  className={`w-full h-12 ${
+                    manualCleaningPumps.has(pump.id)
+                      ? "bg-[hsl(var(--cocktail-primary))]/20 border border-[hsl(var(--cocktail-primary))]/50"
+                      : "bg-[hsl(var(--cocktail-card-bg))] hover:bg-[hsl(var(--cocktail-primary))] hover:text-black"
+                  } text-[hsl(var(--cocktail-text))] border-[hsl(var(--cocktail-card-border))]`}
+                >
+                  {manualCleaningPumps.has(pump.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Droplets className="h-4 w-4" />
+                  )}
+                </Button>
+                <span className="text-xs text-[hsl(var(--cocktail-text-muted))] text-center">
+                  Pumpe {pump.id}
+                  {pump.ingredient && <div className="text-[10px] opacity-70">{pump.ingredient}</div>}
+                </span>
+              </div>
+            ))}
           </div>
-
-          {/* Mehrfach-Auswahl Aktionen */}
-          {selectedPumpsForCleaning.size > 0 && (
-            <div className="flex gap-2">
-              <Button
-                onClick={cleanSelectedPumps}
-                disabled={manualCleaningPumps.size > 0}
-                className="flex-1 bg-[hsl(var(--cocktail-primary))] hover:bg-[hsl(var(--cocktail-primary-hover))] text-black"
-              >
-                <Droplets className="mr-2 h-4 w-4" />
-                {selectedPumpsForCleaning.size} Pumpen gleichzeitig reinigen
-              </Button>
-              <Button
-                onClick={() => setSelectedPumpsForCleaning(new Set())}
-                disabled={manualCleaningPumps.size > 0}
-                variant="outline"
-                className="bg-[hsl(var(--cocktail-card-bg))] border-[hsl(var(--cocktail-card-border))] text-[hsl(var(--cocktail-text))]"
-              >
-                Auswahl aufheben
-              </Button>
-            </div>
-          )}
 
           {manualCleaningPumps.size > 0 && (
             <Alert className="bg-[hsl(var(--cocktail-primary))]/10 border-[hsl(var(--cocktail-primary))]/30">
@@ -417,7 +417,7 @@ export default function PumpCleaning({ pumpConfig }: PumpCleaningProps) {
               <AlertDescription className="text-[hsl(var(--cocktail-text))]">
                 {manualCleaningPumps.size === 1
                   ? `Pumpe ${Array.from(manualCleaningPumps)[0]} wird gereinigt...`
-                  : `${manualCleaningPumps.size} Pumpen werden gereinigt (mit 1 Sek Verzögerung)...`}
+                  : `${manualCleaningPumps.size} Pumpen werden gereinigt...`}
               </AlertDescription>
             </Alert>
           )}

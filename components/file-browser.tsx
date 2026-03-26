@@ -96,8 +96,6 @@ export default function FileBrowser({ isOpen, onClose, onSelectImage }: FileBrow
 
   const handleSelectImage = () => {
     if (selectedImage) {
-      // Den echten Dateisystempfad speichern, damit das Bild später
-      // zuverlässig über /api/image geladen werden kann.
       onSelectImage(selectedImage)
       onClose()
     }
