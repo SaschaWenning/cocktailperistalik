@@ -1,64 +1,25 @@
 import { type LightingConfig, defaultConfig } from "./lighting-config-types"
-import { promises as fs } from "fs"
-import path from "path"
 
 export type { LightingConfig }
 export { defaultConfig }
 
-const LIGHTING_CONFIG_PATH = path.join(process.cwd(), "data", "lighting-config.json")
-
-// In-memory cache
-let cachedConfig: LightingConfig | null = null
-
-function isNodeEnvironment(): boolean {
-  return typeof process !== "undefined" && process.versions != null && process.versions.node != null
-}
+// In-memory storage (simulating localStorage on server)
+let storedConfig: LightingConfig = defaultConfig
 
 export async function loadLightingConfig(): Promise<LightingConfig> {
-  if (!isNodeEnvironment()) {
-    console.log("[v0] Not in Node environment, returning default config")
-    return defaultConfig
-  }
-
-  // Return cached config if available
-  if (cachedConfig) {
-    return cachedConfig
-  }
-
   try {
-    const data = await fs.readFile(LIGHTING_CONFIG_PATH, "utf-8")
-    cachedConfig = JSON.parse(data)
-    console.log("[v0] Loaded lighting config from file:", LIGHTING_CONFIG_PATH)
-    return cachedConfig!
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      console.log("[v0] No lighting config file found, using default config")
-      // Save default config to file
-      await saveLightingConfig(defaultConfig)
-      return defaultConfig
-    }
+    // For server-side, we return the stored config
+    return storedConfig
+  } catch (error) {
     console.error("[v0] Error loading lighting config:", error)
-    return defaultConfig
   }
+  return defaultConfig
 }
 
 export async function saveLightingConfig(config: LightingConfig): Promise<void> {
-  if (!isNodeEnvironment()) {
-    console.log("[v0] Not in Node environment, cannot save to file")
-    return
-  }
-
   try {
-    // Ensure data directory exists
-    await fs.mkdir(path.dirname(LIGHTING_CONFIG_PATH), { recursive: true })
-    
-    // Write config to file
-    await fs.writeFile(LIGHTING_CONFIG_PATH, JSON.stringify(config, null, 2), "utf-8")
-    
-    // Update cache
-    cachedConfig = config
-    
-    console.log("[v0] Lighting config saved to file:", LIGHTING_CONFIG_PATH)
+    storedConfig = config
+    console.log("[v0] Lighting config saved successfully")
   } catch (error) {
     console.error("[v0] Error saving lighting config:", error)
     throw error

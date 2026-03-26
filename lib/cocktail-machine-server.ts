@@ -3,14 +3,23 @@
 import type { Cocktail } from "@/types/cocktail"
 import type { PumpConfig } from "@/types/pump"
 
-// Check if we're in a Node.js environment
+// Check if we're in a Node.js environment with filesystem access
 function isNodeEnvironment(): boolean {
-  return (
-    typeof process !== "undefined" &&
-    process.versions != null &&
-    process.versions.node != null &&
-    typeof window === "undefined"
-  )
+  try {
+    // Prüfe ob require verfügbar ist (nicht in v0 Preview)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const testRequire = typeof require !== "undefined" && require
+    if (!testRequire) return false
+    // Teste ob fs geladen werden kann
+    testRequire("fs")
+    return (
+      typeof process !== "undefined" &&
+      process.versions != null &&
+      process.versions.node != null
+    )
+  } catch {
+    return false
+  }
 }
 
 let fs: typeof import("fs/promises") | null = null
@@ -31,7 +40,9 @@ async function getNodeModules() {
       path = require("path")
       const { exec } = require("child_process")
       const { promisify } = require("util")
-      execPromise = promisify(exec)
+      const rawExec = promisify(exec)
+      // Timeout auf 120 Sekunden erhöhen — Cocktails mit vielen Zutaten brauchen Zeit
+      execPromise = (cmd: string) => rawExec(cmd, { timeout: 120000 })
     } catch (error) {
       console.error("[v0] Failed to load Node.js modules:", error)
       throw new Error("Failed to load Node.js modules")
@@ -64,25 +75,24 @@ export async function getPumpConfig(): Promise<PumpConfig[]> {
     const { fsSync, path } = await getNodeModules()
     const PUMP_CONFIG_PATH = getPumpConfigPath()
 
-    // Prüfe, ob die Datei existiert
     if (fsSync!.existsSync(PUMP_CONFIG_PATH)) {
-      // Lese die Datei
       const data = fsSync!.readFileSync(PUMP_CONFIG_PATH, "utf8")
-      return JSON.parse(data)
+      const loaded: PumpConfig[] = JSON.parse(data)
+      // Migration: fehlende Felder mit Defaults auffüllen
+      const migrated = loaded.map((p) => ({
+        speed: 100,
+        antiDripMl: 0.5,
+        ...p,
+      }))
+      return migrated
     } else {
-      // Wenn die Datei nicht existiert, lade die Standardkonfiguration
       const { pumpConfig } = await import("@/data/pump-config")
-
-      // Speichere die Standardkonfiguration in der JSON-Datei
       fsSync!.mkdirSync(path!.dirname(PUMP_CONFIG_PATH), { recursive: true })
       fsSync!.writeFileSync(PUMP_CONFIG_PATH, JSON.stringify(pumpConfig, null, 2), "utf8")
-
       return pumpConfig
     }
   } catch (error) {
     console.error("Fehler beim Laden der Pumpenkonfiguration:", error)
-
-    // Fallback: Lade die Standardkonfiguration
     const { pumpConfig } = await import("@/data/pump-config")
     return pumpConfig
   }
@@ -272,198 +282,162 @@ export async function deleteRecipe(cocktailId: string) {
   }
 }
 
-// Diese Funktion aktiviert eine Pumpe für eine bestimmte Zeit
-async function activatePump(pin: number, durationMs: number) {
-  try {
-    const { fsSync, path, execPromise } = await getNodeModules()
+// Anti-Tropf: verwendete Pumpen kurz rückwärts laufen lassen
+async function runAntiDrip(usedPumps: PumpConfig[]): Promise<void> {
+  if (usedPumps.length === 0) return
+  // 2000 ms Pause damit Pumpen mechanisch vollständig gestoppt sind vor Richtungsumkehr
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await Promise.all(
+    usedPumps.map((pump) => {
+      const antiDripMl = pump.antiDripMl ?? 0.5
+      if (antiDripMl <= 0) return Promise.resolve()
+      const durationMs = (antiDripMl / pump.flowRate) * 1000
+      // Mindestens 300ms damit die Pumpe überhaupt anläuft (2x50ms Startup + Puffer)
+      const safeDurationMs = Math.max(durationMs, 300)
+      return activatePump(pump.id, safeDurationMs, "reverse", pump.speed ?? 100)
+    }),
+  )
+}
 
-    console.log(`[PUMP DEBUG] ==========================================`)
-    console.log(`[PUMP DEBUG] Aktiviere Pumpe an GPIO Pin ${pin} für ${durationMs}ms`)
-    console.log(`[PUMP DEBUG] Aktueller Arbeitsordner: ${process.cwd()}`)
-
-    // Verwende das Python-Skript zur Steuerung der Pumpe
-    const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control.py")
-    const roundedDuration = Math.round(durationMs)
-
-    if (!fsSync!.existsSync(PUMP_CONTROL_SCRIPT)) {
-      console.error(`[PUMP DEBUG] ❌ Python-Skript nicht gefunden: ${PUMP_CONTROL_SCRIPT}`)
-      throw new Error(`Python-Skript nicht gefunden: ${PUMP_CONTROL_SCRIPT}`)
+// Hilfsfunktion: Python-Skript aufrufen und stdout/stderr prüfen
+async function runPythonScript(command: string): Promise<void> {
+  const { execPromise } = await getNodeModules()
+  const { stdout, stderr } = await execPromise(command)
+  if (stderr && !stderr.includes("Warning") && !stderr.includes("DeprecationWarning")) {
+    console.error(`[PUMP] Python stderr: ${stderr}`)
+  }
+  if (stdout) {
+    const out = stdout.trim()
+    console.log(`[PUMP] Python stdout: ${out}`)
+    try {
+      const result = JSON.parse(out)
+      if (!result.success) {
+        throw new Error(`Python-Fehler: ${result.error || "Unbekannt"}`)
+      }
+    } catch {
+      if (out.toLowerCase().includes("error") || out.toLowerCase().includes("traceback")) {
+        throw new Error(`Python-Skript Fehler: ${out}`)
+      }
     }
-
-    console.log(`[PUMP DEBUG] Python-Skript gefunden: ${PUMP_CONTROL_SCRIPT}`)
-
-    const command = `python3 ${PUMP_CONTROL_SCRIPT} activate ${pin} ${roundedDuration}`
-    console.log(`[PUMP DEBUG] Führe Befehl aus: ${command}`)
-
-    const { stdout, stderr } = await execPromise(command)
-
-    console.log(`[PUMP DEBUG] ✅ Befehl erfolgreich ausgeführt`)
-    if (stdout) {
-      console.log(`[PUMP DEBUG] Python stdout: ${stdout}`)
-    }
-    if (stderr) {
-      console.log(`[PUMP DEBUG] Python stderr: ${stderr}`)
-    }
-    console.log(`[PUMP DEBUG] ==========================================`)
-
-    return true
-  } catch (error) {
-    console.error(`[PUMP DEBUG] ❌ FEHLER beim Aktivieren der Pumpe an Pin ${pin}:`)
-    console.error(`[PUMP DEBUG] Error message: ${error}`)
-    if (error instanceof Error) {
-      console.error(`[PUMP DEBUG] Error stack: ${error.stack}`)
-    }
-    console.error(`[PUMP DEBUG] ==========================================`)
-    throw error
   }
 }
 
-// Hilfsfunktion: Finde alle Pumpen für eine Zutat, sortiert nach Priorität
-function getPumpsForIngredient(ingredientId: string, pumpConfig: PumpConfig[]): PumpConfig[] {
-  return pumpConfig
-    .filter((p) => p.ingredient === ingredientId && p.enabled)
-    .sort((a, b) => (a.priority || 999) - (b.priority || 999))
+// Mehrere Pumpen gleichzeitig in EINEM Python-Subprocess starten (verhindert stop_all-Interferenz)
+async function activatePumpsMulti(
+  entries: { pumpId: number; durationMs: number; direction: "forward" | "reverse"; speedPercent: number; startDelayMs: number }[]
+): Promise<void> {
+  if (entries.length === 0) return
+  const { fsSync, path } = await getNodeModules()
+  const SCRIPT = path!.join(process.cwd(), "pump_control_i2c.py")
+  if (!fsSync!.existsSync(SCRIPT)) {
+    throw new Error(`I2C Python-Skript nicht gefunden: ${SCRIPT}`)
+  }
+  const payload = JSON.stringify(entries.map((e) => ({
+    pump_id:       e.pumpId,
+    duration_ms:   Math.round(e.durationMs),
+    direction:     e.direction,
+    speed_percent: e.speedPercent,
+    start_delay_ms: e.startDelayMs,
+  })))
+  const command = `python3 ${SCRIPT} activate_multi '${payload}'`
+  console.log(`[PUMP] activate_multi: ${entries.length} Pumpen | ${payload}`)
+  await runPythonScript(command)
 }
 
-// Hilfsfunktion: Verteile die benötigte Menge auf mehrere Pumpen basierend auf Füllstand
-async function distributeToPumps(
-  ingredientId: string,
-  amountNeeded: number,
-  pumpConfig: PumpConfig[],
-  ingredientLevels: Map<number, number>
-): Promise<{ pumpId: number; pin: number; amount: number; flowRate: number }[]> {
-  const pumps = getPumpsForIngredient(ingredientId, pumpConfig)
-  
-  if (pumps.length === 0) {
-    console.error(`Keine Pumpe für Zutat ${ingredientId} konfiguriert!`)
-    return []
+// Einzelne Pumpe aktivieren (für Kalibrierung, Anti-Tropf, Shot)
+async function activatePump(
+  pumpId: number,
+  durationMs: number,
+  direction: "forward" | "reverse" = "forward",
+  speedPercent = 100,
+) {
+  const { fsSync, path } = await getNodeModules()
+  const SCRIPT = path!.join(process.cwd(), "pump_control_i2c.py")
+  if (!fsSync!.existsSync(SCRIPT)) {
+    throw new Error(`I2C Python-Skript nicht gefunden: ${SCRIPT}`)
   }
-
-  const distribution: { pumpId: number; pin: number; amount: number; flowRate: number }[] = []
-  let remainingAmount = amountNeeded
-
-  for (const pump of pumps) {
-    if (remainingAmount <= 0) break
-
-    const currentLevel = ingredientLevels.get(pump.id) || 0
-    
-    if (currentLevel <= 0) {
-      console.log(`[v0] Pumpe ${pump.id} (${pump.ingredient}) ist leer, überspringe...`)
-      continue
-    }
-
-    const amountFromThisPump = Math.min(remainingAmount, currentLevel)
-    
-    distribution.push({
-      pumpId: pump.id,
-      pin: pump.pin,
-      amount: amountFromThisPump,
-      flowRate: pump.flowRate
-    })
-
-    console.log(`[v0] Pumpe ${pump.id} (Priorität ${pump.priority || 999}): ${amountFromThisPump}ml von ${currentLevel}ml verfügbar`)
-    
-    remainingAmount -= amountFromThisPump
-  }
-
-  if (remainingAmount > 0) {
-    console.warn(`[v0] WARNUNG: ${remainingAmount}ml von ${ingredientId} konnten nicht verteilt werden!`)
-  }
-
-  return distribution
+  const command = `python3 ${SCRIPT} activate ${pumpId} ${Math.round(durationMs)} ${direction} ${speedPercent}`
+  console.log(`[PUMP] activate: Pumpe ${pumpId} | ${Math.round(durationMs)}ms | ${direction} | ${speedPercent}%`)
+  await runPythonScript(command)
+  return true
 }
 
-export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpConfig[], size = 300, ingredientLevelsData?: { pumpId: number; currentLevel: number }[]) {
+export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpConfig[], size = 200) {
   console.log(`Bereite Cocktail zu: ${cocktail.name} (${size}ml)`)
 
-  // Erstelle eine Map der Füllstände für schnellen Zugriff
-  const ingredientLevels = new Map<number, number>()
-  if (ingredientLevelsData) {
-    for (const level of ingredientLevelsData) {
-      ingredientLevels.set(level.pumpId, level.currentLevel)
-    }
-  } else {
-    // Fallback: Setze alle Pumpen auf "genug" wenn keine Levels übergeben werden
-    for (const pump of pumpConfig) {
-      ingredientLevels.set(pump.id, 10000)
-    }
-  }
-
-  // Skaliere das Rezept auf die gewünschte Größe
-  const currentTotal = cocktail.recipe.reduce((total, item) => total + item.amount, 0)
+  // Nur Pumpen-Zutaten (nicht manual) für die Gesamtmenge zählen
+  const pumpItems = cocktail.recipe.filter((item) => item.manual !== true && item.type !== "manual")
+  const currentTotal = pumpItems.reduce((total, item) => total + item.amount, 0)
   const scaleFactor = currentTotal === 0 ? 1 : size / currentTotal
+
+  console.log(`[PUMP] Rezept-Gesamtvolumen (Pumpen): ${currentTotal}ml → Zielmenge: ${size}ml → Skalierung: ${scaleFactor.toFixed(3)}`)
+
   const scaledRecipe = cocktail.recipe.map((item) => ({
     ...item,
     amount: Math.round(item.amount * scaleFactor),
   }))
 
-  const delayedItems = scaledRecipe.filter((item) => item.delayed === true)
-  const immediateItems = scaledRecipe.filter((item) => item.delayed !== true)
+  const delayedItems = scaledRecipe.filter((item) => item.delayed === true && item.manual !== true && item.type !== "manual")
+  const immediateItems = scaledRecipe.filter((item) => item.delayed !== true && item.manual !== true && item.type !== "manual")
 
-  console.log(`[v0] Sofortige Zutaten: ${immediateItems.length}, Verzögerte Zutaten: ${delayedItems.length}`)
-
-  // Sammle Pumpen-Updates für Level-Reduktion
   const levelUpdates: { pumpId: number; amount: number }[] = []
 
-  // Verarbeite sofortige Zutaten mit Multi-Pumpen-Unterstützung
-  const immediatePumpPromises: Promise<void>[] = []
-  
-  for (const item of immediateItems) {
-    const distribution = await distributeToPumps(
-      item.ingredientId,
-      item.amount,
-      pumpConfig,
-      ingredientLevels
-    )
-
-    for (const dist of distribution) {
-      const pumpTimeMs = (dist.amount / dist.flowRate) * 1000
-      
-      console.log(`[v0] Sofort: Pumpe ${dist.pumpId}: ${dist.amount}ml für ${pumpTimeMs}ms aktivieren`)
-      
-      levelUpdates.push({ pumpId: dist.pumpId, amount: dist.amount })
-      
-      // Aktualisiere den lokalen Füllstand für weitere Berechnungen
-      const currentLevel = ingredientLevels.get(dist.pumpId) || 0
-      ingredientLevels.set(dist.pumpId, currentLevel - dist.amount)
-      
-      immediatePumpPromises.push(activatePump(dist.pin, pumpTimeMs).then(() => {}))
+  // Alle sofortigen Pumpen in EINEM Subprocess — 200 ms gestaffelt via start_delay_ms
+  const immediateEntries = immediateItems.flatMap((item, index) => {
+    const pump = pumpConfig.find((p) => p.ingredient === item.ingredientId)
+    if (!pump) {
+      console.error(`Keine Pumpe für Zutat ${item.ingredientId} konfiguriert!`)
+      return []
     }
-  }
+    const durationMs = (item.amount / pump.flowRate) * 1000
+    console.log(`[PUMP] Pumpe ${pump.id} (${item.ingredientId}): ${item.amount}ml @ ${pump.flowRate}ml/s = ${(durationMs/1000).toFixed(1)}s`)
+    levelUpdates.push({ pumpId: pump.id, amount: item.amount })
+    return [{
+      pumpId:       pump.id,
+      durationMs,
+      direction:    "forward" as const,
+      speedPercent: pump.speed ?? 100,
+      startDelayMs: index * 200,
+    }]
+  })
 
-  // Warte, bis alle sofortigen Pumpen aktiviert wurden
-  await Promise.all(immediatePumpPromises)
+  if (immediateEntries.length > 0) {
+    await activatePumpsMulti(immediateEntries)
+  }
 
   if (delayedItems.length > 0) {
-    console.log(`[v0] Warte 2 Sekunden vor dem Hinzufügen von ${delayedItems.length} verzögerten Zutaten...`)
+    console.log(`Warte 2 Sekunden vor verzögerten Zutaten...`)
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Füge verzögerte Zutaten mit Multi-Pumpen-Unterstützung hinzu
-    for (const item of delayedItems) {
-      const distribution = await distributeToPumps(
-        item.ingredientId,
-        item.amount,
-        pumpConfig,
-        ingredientLevels
-      )
-
-      for (const dist of distribution) {
-        const pumpTimeMs = (dist.amount / dist.flowRate) * 1000
-        
-        console.log(`[v0] Verzögert: Pumpe ${dist.pumpId}: ${dist.amount}ml für ${pumpTimeMs}ms aktivieren`)
-        
-        levelUpdates.push({ pumpId: dist.pumpId, amount: dist.amount })
-        
-        // Aktualisiere den lokalen Füllstand
-        const currentLevel = ingredientLevels.get(dist.pumpId) || 0
-        ingredientLevels.set(dist.pumpId, currentLevel - dist.amount)
-        
-        await activatePump(dist.pin, pumpTimeMs)
+    const delayedEntries = delayedItems.flatMap((item, index) => {
+      const pump = pumpConfig.find((p) => p.ingredient === item.ingredientId)
+      if (!pump) {
+        console.error(`Keine Pumpe für Zutat ${item.ingredientId} konfiguriert!`)
+        return []
       }
+      const durationMs = (item.amount / pump.flowRate) * 1000
+      console.log(`[PUMP-DELAYED] Pumpe ${pump.id} (${item.ingredientId}): ${item.amount}ml @ ${pump.flowRate}ml/s = ${(durationMs/1000).toFixed(2)}s`)
+      levelUpdates.push({ pumpId: pump.id, amount: item.amount })
+      return [{
+        pumpId:       pump.id,
+        durationMs,
+        direction:    "forward" as const,
+        speedPercent: pump.speed ?? 100,
+        startDelayMs: index * 200,
+      }]
+    })
+
+    if (delayedEntries.length > 0) {
+      await activatePumpsMulti(delayedEntries)
     }
   }
 
-  // Aktualisiere die Füllstände über API
+  // Anti-Tropf: NACH dem Return im Hintergrund starten (blockiert nicht die "Fertig"-Meldung)
+  const usedPumps = levelUpdates
+    .map((u) => pumpConfig.find((p) => p.id === u.pumpId))
+    .filter((p): p is PumpConfig => p !== undefined)
+
+  // Füllstände sofort aktualisieren bevor Anti-Tropf startet
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/ingredient-levels/update`,
@@ -473,10 +447,9 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
         body: JSON.stringify({ ingredients: levelUpdates }),
       },
     )
-
     if (response.ok) {
       const data = await response.json()
-      console.log("[v0] Füllstände erfolgreich aktualisiert:", data.levels?.length || 0, "Levels")
+      console.log("Füllstände aktualisiert:", data.levels?.length || 0, "Levels")
     } else {
       console.error("Fehler beim Aktualisieren der Füllstände:", response.statusText)
     }
@@ -484,8 +457,8 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
     console.error("Error updating levels:", error)
   }
 
-  // Return ingredient usage data so client can save statistics
-  return {
+  // Ergebnis sofort zurückgeben — Anti-Tropf läuft danach im Hintergrund
+  const result = {
     success: true,
     ingredientUsage: levelUpdates.map((update) => {
       const pump = pumpConfig.find((p) => p.id === update.pumpId)
@@ -495,6 +468,13 @@ export async function makeCocktailAction(cocktail: Cocktail, pumpConfig: PumpCon
       }
     }),
   }
+
+  // Anti-Tropf fire-and-forget (kein await — Client bekommt sofort "Fertig")
+  runAntiDrip(usedPumps).catch((err) =>
+    console.error("Anti-Tropf Fehler (non-critical):", err)
+  )
+
+  return result
 }
 
 export async function makeSingleShotAction(ingredientId: string, amount = 40, pumpConfig: PumpConfig[]) {
@@ -512,8 +492,8 @@ export async function makeSingleShotAction(ingredientId: string, amount = 40, pu
 
   console.log(`Pumpe ${pump.id} (${pump.ingredient}): ${amount}ml für ${pumpTimeMs}ms aktivieren`)
 
-  // Aktiviere die Pumpe
-  await activatePump(pump.pin, pumpTimeMs)
+  await activatePump(pump.id, pumpTimeMs, "forward", pump.speed ?? 100)
+  await runAntiDrip([pump])
 
   // Aktualisiere den Füllstand über API
   try {
@@ -541,65 +521,69 @@ export async function makeSingleShotAction(ingredientId: string, amount = 40, pu
 
 export async function calibratePumpAction(pumpId: number, durationMs: number) {
   try {
-    console.log(`[CALIBRATE DEBUG] ==========================================`)
-    console.log(`[CALIBRATE DEBUG] Kalibriere Pumpe ${pumpId} für ${durationMs}ms`)
-
     const pumpConfig = await getPumpConfig()
     const pump = pumpConfig.find((p) => p.id === pumpId)
 
     if (!pump) {
-      console.error(`[CALIBRATE DEBUG] ❌ Pumpe mit ID ${pumpId} nicht gefunden`)
-      console.error(
-        `[CALIBRATE DEBUG] Verfügbare Pumpen: ${pumpConfig.map((p) => `ID:${p.id} GPIO:${p.pin}`).join(", ")}`,
-      )
       throw new Error(`Pumpe mit ID ${pumpId} nicht gefunden`)
     }
 
-    console.log(`[CALIBRATE DEBUG] Gefundene Pumpe: ID:${pump.id}, GPIO:${pump.pin}, Enabled:${pump.enabled}`)
-
-    if (!pump.enabled) {
-      console.warn(`[CALIBRATE DEBUG] ⚠️  Pumpe ${pumpId} ist deaktiviert (enabled: false)`)
-    }
-
-    const { fsSync, path, execPromise } = await getNodeModules()
-    const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control.py")
-    const roundedDuration = Math.round(durationMs)
-
-    if (!fsSync!.existsSync(PUMP_CONTROL_SCRIPT)) {
-      console.error(`[CALIBRATE DEBUG] ❌ Python-Skript nicht gefunden: ${PUMP_CONTROL_SCRIPT}`)
-      throw new Error(`Python-Skript nicht gefunden: ${PUMP_CONTROL_SCRIPT}`)
-    }
-
-    const command = `python3 ${PUMP_CONTROL_SCRIPT} activate ${pump.pin} ${roundedDuration}`
-    console.log(`[CALIBRATE DEBUG] Führe Befehl aus: ${command}`)
-
-    const { stdout, stderr } = await execPromise(command)
-
-    if (stdout) {
-      console.log(`[CALIBRATE DEBUG] Python stdout: ${stdout}`)
-    }
-    if (stderr) {
-      console.log(`[CALIBRATE DEBUG] Python stderr: ${stderr}`)
-    }
-
-    console.log(`[CALIBRATE DEBUG] ✅ Pumpe ${pumpId} erfolgreich kalibriert`)
-    console.log(`[CALIBRATE DEBUG] ==========================================`)
+    // Kalibrierung läuft immer mit der konfigurierten Pumpengeschwindigkeit
+    await activatePump(pump.id, durationMs, "forward", pump.speed ?? 100)
 
     return { success: true }
   } catch (error) {
-    console.error(`[CALIBRATE DEBUG] ❌ FEHLER bei der Kalibrierung der Pumpe ${pumpId}:`)
-    console.error(`[CALIBRATE DEBUG] Error message: ${error}`)
-    if (error instanceof Error) {
-      console.error(`[CALIBRATE DEBUG] Error stack: ${error.stack}`)
-    }
-    console.error(`[CALIBRATE DEBUG] ==========================================`)
+    console.error(`Fehler bei der Kalibrierung von Pumpe ${pumpId}:`, error)
     throw error
   }
 }
 
-export async function cleanPumpAction(pumpId: number, durationMs: number) {
+// Schlauch-Entleerungs-Funktion: 4 Pumpen gleichzeitig rückwärts, in 4 Gruppen
+export async function drainTubesAction(): Promise<{ success: boolean; message: string }> {
+  const DRAIN_DURATION_MS = 10000
+  const DRAIN_SPEED = 100
+  const PAUSE_BETWEEN_GROUPS_MS = 2000
+
+  const groups = [
+    [1, 2, 3, 4],
+    [5, 6, 7, 8],
+    [9, 10, 11, 12],
+    [13, 14, 15, 16],
+  ]
+
+  const pumpConfig = await getPumpConfig()
+
+  for (let g = 0; g < groups.length; g++) {
+    const group = groups[g]
+
+    // Alle 4 Pumpen der Gruppe in EINEM Subprocess gleichzeitig rückwärts (mit 200ms Staffelung)
+    const entries = group
+      .map((pumpId) => pumpConfig.find((p) => p.id === pumpId))
+      .filter((pump): pump is PumpConfig => pump !== undefined && pump.enabled)
+      .map((pump, index) => ({
+        pumpId:       pump.id,
+        durationMs:   DRAIN_DURATION_MS,
+        direction:    "reverse" as const,
+        speedPercent: DRAIN_SPEED,
+        startDelayMs: index * 200,
+      }))
+
+    if (entries.length > 0) {
+      await activatePumpsMulti(entries)
+    }
+
+    // Pause zwischen Gruppen (außer nach der letzten)
+    if (g < groups.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, PAUSE_BETWEEN_GROUPS_MS))
+    }
+  }
+
+  return { success: true, message: "Alle Schläuche wurden entleert." }
+}
+
+export async function cleanPumpAction(pumpId: number, durationMs: number, reverse = false) {
   try {
-    console.log(`Reinige Pumpe ${pumpId} für ${durationMs}ms`)
+    console.log(`Reinige Pumpe ${pumpId} für ${durationMs}ms ${reverse ? "(RÜCKWÄRTS)" : "(VORWÄRTS)"}`)
 
     // Finde die Pumpe in der Konfiguration
     const pumpConfig = await getPumpConfig()
@@ -609,12 +593,8 @@ export async function cleanPumpAction(pumpId: number, durationMs: number) {
       throw new Error(`Pumpe mit ID ${pumpId} nicht gefunden`)
     }
 
-    // Aktiviere die Pumpe über das Python-Skript
-    const { fsSync, path, execPromise } = await getNodeModules()
-    const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control.py")
-    const roundedDuration = Math.round(durationMs)
-
-    await execPromise(`python3 ${PUMP_CONTROL_SCRIPT} activate ${pump.pin} ${roundedDuration}`)
+    const direction = reverse ? "reverse" : "forward"
+    await activatePump(pump.id, durationMs, direction, 100)
 
     console.log(`Pumpe ${pumpId} erfolgreich gereinigt`)
 
@@ -636,9 +616,7 @@ export async function activatePumpForDurationAction(
     throw new Error(`Pumpe mit ID "${pumpId}" nicht gefunden.`)
   }
 
-  console.log(`Gefundene Pumpe: ${pump.id} (GPIO ${pump.pin})`)
-  await activatePump(pump.pin, durationMs)
-  console.log(`Pumpe ${pump.id} deaktiviert.`)
+  await activatePump(pump.id, durationMs, "forward", 100)
 }
 
 export async function ventPumpAction(pumpId: number, durationMs: number) {
@@ -652,10 +630,10 @@ export async function ventPumpAction(pumpId: number, durationMs: number) {
 
     // Aktiviere die Pumpe über das Python-Skript
     const { fsSync, path, execPromise } = await getNodeModules()
-    const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control.py")
+    const PUMP_CONTROL_SCRIPT = path!.join(process.cwd(), "pump_control_i2c.py")
     const roundedDuration = Math.round(durationMs)
 
-    await execPromise(`python3 ${PUMP_CONTROL_SCRIPT} activate ${pump.pin} ${roundedDuration}`)
+    await execPromise(`python3 ${PUMP_CONTROL_SCRIPT} activate ${pump.id} ${roundedDuration} 'forward' 100`)
 
     console.log(`Pumpe ${pumpId} erfolgreich entlüftet`)
 
@@ -681,8 +659,8 @@ export async function makeShotAction(ingredient: string, pumpConfig: PumpConfig[
 
   console.log(`Pumpe ${pump.id} (${pump.ingredient}): ${size}ml für ${pumpTimeMs}ms aktivieren`)
 
-  // Aktiviere die Pumpe
-  await activatePump(pump.pin, pumpTimeMs)
+  await activatePump(pump.id, pumpTimeMs, "forward", 100)
+  await runAntiDrip([pump])
 
   try {
     const response = await fetch(

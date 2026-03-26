@@ -40,12 +40,11 @@ export async function makeCocktail(
   pumpConfig: PumpConfig[],
   size = 300,
   category: "cocktails" | "virgin" | "shots" = "cocktails",
-  ingredientLevels?: { pumpId: number; currentLevel: number }[],
 ) {
   const response = await fetch("/api/make-cocktail", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cocktail, pumpConfig, size, ingredientLevels }),
+    body: JSON.stringify({ cocktail, pumpConfig, size }),
   })
 
   if (!response.ok) {
@@ -109,6 +108,19 @@ export async function calibratePump(pumpId: number, durationMs: number) {
 
   if (!response.ok) {
     throw new Error(`Failed to calibrate pump: ${response.statusText}`)
+  }
+
+  return await response.json()
+}
+
+export async function drainTubes(): Promise<{ success: boolean; message: string }> {
+  const response = await fetch("/api/drain-tubes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Fehler beim Entleeren der Schläuche: ${response.statusText}`)
   }
 
   return await response.json()

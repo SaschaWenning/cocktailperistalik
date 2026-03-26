@@ -39,12 +39,6 @@ export const defaultTabConfig: AppConfig = {
       passwordProtected: true,
     },
     {
-      id: "recipe-lists",
-      name: "Rezepte",
-      location: "service",
-      passwordProtected: true,
-    },
-    {
       id: "levels",
       name: "Füllstände",
       location: "service",

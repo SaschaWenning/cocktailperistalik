@@ -14,64 +14,53 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Bildpfad ist erforderlich" }, { status: 400 })
     }
 
-    const possiblePaths: string[] = []
+    console.log("[v0] Image API: Loading image from path:", imagePath)
 
-    // Echte absolute Dateisystempfade
-    if (
-      imagePath.startsWith("/home/") ||
-      imagePath.startsWith("/var/") ||
-      imagePath.startsWith("/opt/") ||
-      imagePath.startsWith("/media/")
-    ) {
-      possiblePaths.push(imagePath)
-    }
+    let fullPath: string
 
-    // Absolute Projektpfade, die /public/ enthalten
-    if (imagePath.includes("/public/")) {
-      possiblePaths.push(imagePath)
-    }
-
-    // Webpfade wie /images/cocktails/foo.jpg
+    // Prüfe verschiedene mögliche Pfade
     if (imagePath.startsWith("/")) {
-      const relativePath = imagePath.replace(/^\/+/, "")
-      possiblePaths.push(
-        path.join(process.cwd(), "public", relativePath),
-        path.join(process.cwd(), "cocktailbot-main", "public", relativePath),
-      )
+      // Absoluter Pfad
+      fullPath = imagePath
     } else {
-      possiblePaths.push(
+      // Relativer Pfad - versuche verschiedene Basis-Pfade
+      const possiblePaths = [
         path.join(process.cwd(), "public", imagePath),
-        path.join(process.cwd(), "cocktailbot-main", "public", imagePath),
         path.join(process.cwd(), imagePath),
         imagePath,
-      )
-    }
+      ]
 
-    const uniquePaths = [...new Set(possiblePaths)]
+      fullPath = ""
+      for (const testPath of possiblePaths) {
+        try {
+          await access(testPath, constants.F_OK)
+          fullPath = testPath
+          break
+        } catch {
+          // Datei existiert nicht an diesem Pfad
+        }
+      }
 
-    let fullPath = ""
-
-    for (const testPath of uniquePaths) {
-      try {
-        await access(testPath, constants.F_OK)
-        fullPath = testPath
-        break
-      } catch {
-        // nächster Kandidat
+      if (!fullPath) {
+        console.log("[v0] Image API: Image not found at any path:", possiblePaths)
+        return NextResponse.json({ error: "Bild nicht gefunden" }, { status: 404 })
       }
     }
 
-    if (!fullPath) {
-      return NextResponse.json(
-        { error: "Bild nicht gefunden", tried: uniquePaths },
-        { status: 404 },
-      )
+    // Prüfe ob Datei existiert
+    try {
+      await access(fullPath, constants.F_OK)
+    } catch {
+      console.log("[v0] Image API: Image file does not exist:", fullPath)
+      return NextResponse.json({ error: "Bilddatei existiert nicht" }, { status: 404 })
     }
 
+    // Lese Bilddatei
     const imageBuffer = await readFile(fullPath)
 
+    // Bestimme Content-Type basierend auf Dateiendung
     const ext = path.extname(fullPath).toLowerCase()
-    let contentType = "image/jpeg"
+    let contentType = "image/jpeg" // Default
 
     switch (ext) {
       case ".png":
@@ -95,14 +84,24 @@ export async function GET(request: NextRequest) {
         break
     }
 
+    console.log(
+      "[v0] Image API: Successfully loaded image:",
+      fullPath,
+      "Type:",
+      contentType,
+      "Size:",
+      imageBuffer.length,
+    )
+
+    // Gebe Bilddatei zurück
     return new NextResponse(imageBuffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "public, max-age=3600", // 1 Stunde Cache
       },
     })
   } catch (error) {
-    console.error("Image API Error:", error)
+    console.error("[v0] Image API Error:", error)
     return NextResponse.json({ error: "Fehler beim Laden des Bildes" }, { status: 500 })
   }
 }
